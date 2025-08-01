@@ -4,7 +4,7 @@ Welcome to my repository for the Master's program in Artificial Intelligence at 
 
 ## 📖 About This Repository
 
-This repository documents my academic journey, showcasing the practical application of concepts learned in various courses. It's a living collection of my work, from foundational principles to advanced topics in AI.
+This repository documents my academic journey, showcasing the practical application of concepts learned in the course in Machine Learning. It's a living collection of my work, from foundational principles to advanced topics in AI.
 
 ## 📂 Repository Structure
 
@@ -12,37 +12,22 @@ The repository is organized by courses to make navigation straightforward. Each 
 
 ```
 AI-Master-EAFIT/
-├── Course-Name-1/
-│   ├── Assignments/
-│   ├── Projects/
+├── Talleres/
+│   ├── Taller_1/
+│   ├── Taller_2/
+│   ├── Taller_3/
 │   └── Notes/
-├── Course-Name-2/
+├── Proyecto_Agente/
 │   ├── ...
 └── README.md
 ```
-
-## 📚 Courses
-
-Here is a list of the courses I am taking or have completed. Each folder corresponds to one of these courses. *(You can update this list with your actual courses).*
-
-*   **Foundations of Artificial Intelligence:** Core concepts, search algorithms, and knowledge representation.
-*   **Machine Learning:** Supervised, unsupervised, and reinforcement learning models.
-*   **Deep Learning:** Neural networks, CNNs, RNNs, and advanced architectures.
-*   **Natural Language Processing:** Text processing, sentiment analysis, and language models.
-*   **Computer Vision:** Image analysis, object detection, and recognition.
-*   **AI Ethics and Governance:** Exploring the societal impact and ethical considerations of AI.
-*   **Master's Thesis:** Research and development for the final degree project.
-
 ## 🚀 How to Use
 
 Feel free to explore the folders and check out the projects. If you are a fellow student, I hope this repository can serve as a source of inspiration. Please remember to uphold academic integrity and avoid plagiarism.
 
 ## 👨‍💻 About Me
 
-My name is Juan Felipe Cardona, and I am a passionate AI enthusiast currently pursuing my Master's degree at EAFIT. Connect with me on:
-
-*   **LinkedIn:** [Your LinkedIn Profile URL]
-*   **GitHub:** [Your GitHub Profile URL]
+My name is Juan Felipe Cardona, and I am a passionate AI enthusiast currently pursuing my Master's degree at EAFIT.
 
 ## 📄 License
 
