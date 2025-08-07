@@ -1,0 +1,4 @@
+
+.env
+# Ignore the encrypted environment file
+# This file contains API keys and should not be tracked
