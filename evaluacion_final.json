@@ -1,0 +1,73 @@
+{
+  "criterios": [
+    {
+      "nombre": "Instrucciones generales",
+      "cumplimiento": "Sí",
+      "observaciones": "Se mantienen cuatro ejercicios desarrollados sobre el notebook base.",
+      "notas_explicativas": "No se modificó el alcance original y el trabajo sigue ejecutable en .ipynb."
+    },
+    {
+      "nombre": "Análisis del problema",
+      "cumplimiento": "Sí",
+      "observaciones": "El ejercicio de filogenia explica el contexto biológico y el objetivo de hallar el LCA usando DLS.",
+      "notas_explicativas": "Se aclara qué es un árbol filogenético y por qué limitar la profundidad es útil."
+    },
+    {
+      "nombre": "Implementación",
+      "cumplimiento": "Sí",
+      "observaciones": "Se añadió la función genérica `run_compare_algorithms` sin afectar las implementaciones originales.",
+      "notas_explicativas": "La automatización permite reutilizar las rutinas en varios ejercicios."
+    },
+    {
+      "nombre": "Justificación de métricas",
+      "cumplimiento": "Sí",
+      "observaciones": "La sección de evacuación describe el origen de la métrica de riesgo y la conveniencia de UCS frente a otras métricas.",
+      "notas_explicativas": "Se argumenta que minimizar riesgo acumulado es más relevante que distancia o tiempo en este escenario."
+    },
+    {
+      "nombre": "Medidas de desempeño",
+      "cumplimiento": "Sí",
+      "observaciones": "Las rutinas comparativas conservan el reporte de costo, nodos expandidos, profundidad y tiempo en cada ejercicio.",
+      "notas_explicativas": "`run_compare_algorithms` centraliza la recolección de métricas."
+    },
+    {
+      "nombre": "Complejidad",
+      "cumplimiento": "Sí",
+      "observaciones": "Se agregó una sección dedicada al análisis temporal y espacial de BFS, IDS/DLS, UCS y A*.",
+      "notas_explicativas": "Cada algoritmo incluye su cota de tiempo y memoria con respecto a b y d."
+    },
+    {
+      "nombre": "Automatización",
+      "cumplimiento": "Sí",
+      "observaciones": "Filogenia y evacuación utilizan ahora `run_compare_algorithms` para ejecutar y contrastar resultados automáticamente.",
+      "notas_explicativas": "La comparación de algoritmos deja de ser manual en estos ejercicios."
+    },
+    {
+      "nombre": "Reflexión crítica",
+      "cumplimiento": "Sí",
+      "observaciones": "Se añadieron conclusiones en el ejercicio de evacuación analizando el impacto de la heurística y posibles mejoras.",
+      "notas_explicativas": "La reflexión discute desempeño y futuras extensiones con riesgo probabilístico."
+    },
+    {
+      "nombre": "Formato de entrega",
+      "cumplimiento": "Sí",
+      "observaciones": "Se añadió README_mejoras.md y el notebook mantiene celdas ordenadas y comentadas.",
+      "notas_explicativas": "El trabajo final queda documentado y versionado en Git."
+    }
+  ],
+  "sugerencias_mejora": [
+    "Modularizar las funciones comunes en archivos .py para habilitar pruebas unitarias.",
+    "Explorar heurísticas de riesgo más informativas o aprendidas para A* en evacuación."
+  ],
+  "valoracion_global": {
+    "resumen": "El notebook ahora cumple todos los criterios de la rúbrica con documentación y comparaciones automatizadas.",
+    "fortalezas": [
+      "Automatización de experimentos con recolección uniforme de métricas",
+      "Explicaciones claras del dominio en filogenia y evacuación"
+    ],
+    "areas_mejora": [
+      "Profundizar en modularización y pruebas automáticas",
+      "Evaluar heurísticas más sofisticadas en contextos de riesgo"
+    ]
+  }
+}
