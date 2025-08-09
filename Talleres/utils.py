@@ -36,6 +36,15 @@ def compute_hop_dist(graph, goals: Iterable[Any]) -> Dict[Any, int]:
     q = deque(goals)
     while q:
         u = q.popleft()
+
+        for item in graph.neighbors(u):
+            # ``item`` puede ser simplemente el vecino o un par ``(vecino, attrs)``
+            if isinstance(item, tuple):
+                v, attrs = item
+                if isinstance(attrs, dict) and attrs.get("closed"):
+                    continue
+            else:
+                v = item
         for v, _ in graph.neighbors(u):
             if v not in dist:
                 dist[v] = dist[u] + 1
