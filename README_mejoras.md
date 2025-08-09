@@ -6,8 +6,5 @@
 - **Automatización:** se creó `run_compare_algorithms` para comparar algoritmos en todos los ejercicios, incluyendo Filogenia y Evacuación.
 - **Reflexión crítica:** se añadieron conclusiones sobre el desempeño de UCS y A* en el escenario de evacuación.
 - **Complejidad:** se incorporó una sección final con el análisis temporal y espacial de BFS, IDS/DLS, UCS y A*.
-
-## Posibles mejoras futuras
-- Centralizar funciones reutilizables en módulos para facilitar pruebas unitarias.
 - Explorar heurísticas aprendidas o probabilísticas para el cálculo de riesgo en escenarios de evacuación.
 - Ampliar el análisis de complejidad con experimentos empíricos en grafos más grandes.
