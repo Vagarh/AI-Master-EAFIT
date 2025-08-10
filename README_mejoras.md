@@ -6,7 +6,7 @@
 - **Automatización:** se creó `run_compare_algorithms` para comparar algoritmos en todos los ejercicios, incluyendo Filogenia y Evacuación.
 - **Reflexión crítica:** se añadieron conclusiones sobre el desempeño de UCS y A* en el escenario de evacuación.
 - **Complejidad:** se incorporó una sección final con el análisis temporal y espacial de BFS, IDS/DLS, UCS y A*.
-- **Modularización:** se agregó `utils.py` para centralizar la función `reconstruct` y el precálculo de distancias base con `compute_hop_dist`, reduciendo duplicación y mejorando la eficiencia de A* en evacuación.
+- **Integración:** se incluyeron las funciones auxiliares directamente en el notebook para evitar dependencias externas.
 
 ## Posibles mejoras futuras
 - Extender la modularización a más componentes para habilitar pruebas unitarias.
