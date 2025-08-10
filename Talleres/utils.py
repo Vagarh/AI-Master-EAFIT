@@ -3,6 +3,7 @@ from typing import Dict, List, Optional, Iterable, Any
 import time
 
 
+
 def reconstruct(parent: Dict[Any, Optional[Any]], goal: Any) -> List[Any]:
     """Reconstruye la ruta desde el inicio implícito hasta ``goal``.
 
@@ -37,6 +38,7 @@ def compute_hop_dist(graph, goals: Iterable[Any]) -> Dict[Any, int]:
     q = deque(goals)
     while q:
         u = q.popleft()
+
         for item in graph.neighbors(u):
             # ``item`` puede ser simplemente el vecino o un par ``(vecino, attrs)``
             if isinstance(item, tuple):
@@ -45,11 +47,13 @@ def compute_hop_dist(graph, goals: Iterable[Any]) -> Dict[Any, int]:
                     continue
             else:
                 v = item
+
+        for v, _ in graph.neighbors(u):
+
             if v not in dist:
                 dist[v] = dist[u] + 1
                 q.append(v)
     return dist
-
 
 class PhyloTree:
     """Árbol simple orientado para consultas de LCA."""
@@ -133,3 +137,4 @@ def lca_with_method(
         "tiempo_ms": round((time.time() - t0) * 1000, 3),
     }
     return res
+
