@@ -1,0 +1,8 @@
+google-adk==1.4.2
+litellm==1.73.0
+python-dotenv
+pydantic
+jupyter
+matplotlib
+pandas
+networkx

@@ -14,16 +14,37 @@ The repository is organized by courses to make navigation straightforward. Each 
 AI-Master-EAFIT/
 ├── Talleres/
 │   ├── Taller_1/
-│   ├── Taller_2/
-│   ├── Taller_3/
-│   └── Notes/
+│   │   └── Ejercicio_1.ipynb
+│   └── ...
 ├── Proyecto_Agente/
-│   ├── ...
+│   └── Pruebas.ipynb
+├── requirements.txt
 └── README.md
 ```
-## 🚀 How to Use
 
-Feel free to explore the folders and check out the projects. If you are a fellow student, I hope this repository can serve as a source of inspiration. Please remember to uphold academic integrity and avoid plagiarism.
+## 🚀 Cómo Empezar
+
+1.  **Clona el repositorio:**
+    ```bash
+    git clone https://github.com/tu-usuario/AI-Master-EAFIT.git
+    cd AI-Master-EAFIT
+    ```
+
+2.  **Crea un entorno virtual (recomendado):**
+    ```bash
+    python -m venv env
+    source env/bin/activate  # En Windows: env\Scripts\activate
+    ```
+
+3.  **Instala las dependencias:**
+    ```bash
+    pip install -r requirements.txt
+    ```
+
+4.  **Ejecuta Jupyter Notebook:**
+    ```bash
+    jupyter notebook
+    ```
 
 ## 👨‍💻 About Me
 
