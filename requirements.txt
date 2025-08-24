@@ -10,3 +10,4 @@ networkx
 streamlit
 openpyxl
 biopython
+fpdf2>=2.7.0
