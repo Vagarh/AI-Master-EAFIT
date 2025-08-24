@@ -7,7 +7,11 @@ from eda import validate_eda
 from report import generate_report
 from mail import send_email
 from agent import ProteinAnalysisAgent
+from dotenv import load_dotenv
 
+# Cargar variables de entorno desde el archivo .env
+# Esto debe hacerse al principio del script
+load_dotenv()
 st.set_page_config(page_title="Agente de Análisis de Proteínas", layout="wide")
 
 # ---- Estado ----
@@ -126,19 +130,31 @@ with tab_eda:
 # ---- Reporte y envío ----
 st.markdown("---")
 st.subheader("Resultados")
-report_btn = st.button("Generar reporte descargable")
-if report_btn and st.session_state.ran:
+
+if not st.session_state.ran:
+    st.info("Ejecuta el análisis para poder generar y enviar el reporte.")
+else:
+    # Generar el contenido del reporte una sola vez para usarlo en ambas funciones
     report_content = generate_report(st.session_state.eda_ok, st.session_state.df)
-    st.download_button("Descargar reporte (.txt)", data=report_content, file_name="reporte.txt")
 
-send_btn = st.button("Enviar reporte por email")
-if send_btn:
-    if not email_to:
-        st.error("Falta correo destino.")
-    elif not st.session_state.ran:
-        st.error("Ejecuta el análisis antes de enviar.")
-    else:
-        report_content = generate_report(st.session_state.eda_ok, st.session_state.df)
-        ok = send_email(email_to, "Resultados del análisis", report_content)
-        st.success("Correo enviado") if ok else st.error("Fallo al enviar. Revisa SMTP_* en variables de entorno.")
+    # --- Botón de descarga ---
+    # st.download_button es un widget que gestiona su propio estado.
+    # No debe estar dentro de un if que dependa de otro botón.
+    st.download_button(
+        label="Descargar reporte (.txt)",
+        data=report_content,
+        file_name="reporte.txt",
+        mime="text/plain"
+    )
 
+    # --- Botón de envío por correo ---
+    if st.button("Enviar reporte por email"):
+        if not email_to:
+            st.warning("Por favor, introduce una dirección de correo en el panel de la izquierda.")
+        else:
+            with st.spinner("Enviando correo..."):
+                ok, message = send_email(email_to, "Resultados del análisis", report_content)
+                if ok:
+                    st.success(message)
+                else:
+                    st.error(message)
