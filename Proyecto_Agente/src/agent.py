@@ -3,7 +3,7 @@ import pandas as pd
 from langchain_huggingface import HuggingFaceEndpoint
 from langchain import hub
 from langchain.agents import create_react_agent, AgentExecutor
-from src.tools import search_protein_info, generate_length_histogram
+from src.tools import search_protein_info, generate_length_histogram, get_amino_acid_composition_tool, get_hydrophobicity_scores_tool, get_q3_distribution_tool, get_q8_distribution_tool
 from langchain.tools import Tool
 from functools import partial
 
@@ -30,6 +30,10 @@ Por favor, guárdala como una variable de entorno llamada HUGGINGFACEHUB_API_TOK
 
     # Herramientas
     # Envolvemos la herramienta de histograma para que reciba el dataframe actual
+    amino_acid_composition_tool_with_df = partial(get_amino_acid_composition_tool, dataframe=df)
+    hydrophobicity_scores_tool_with_df = partial(get_hydrophobicity_scores_tool, dataframe=df)
+    q3_distribution_tool_with_df = partial(get_q3_distribution_tool, dataframe=df)
+    q8_distribution_tool_with_df = partial(get_q8_distribution_tool, dataframe=df)
     histogram_tool_with_df = partial(generate_length_histogram, dataframe=df)
     
     tools = [
@@ -42,6 +46,27 @@ Por favor, guárdala como una variable de entorno llamada HUGGINGFACEHUB_API_TOK
             name="GeneradorHistogramaLongitud",
             func=histogram_tool_with_df,
             description="Genera un histograma de la longitud de las secuencias de proteínas. No necesita argumentos."
+        )
+        ,
+        Tool(
+            name="ComposicionAminoacidos",
+            func=amino_acid_composition_tool_with_df,
+            description="Calcula y devuelve la composición de aminoácidos del dataset. No necesita argumentos."
+        ),
+        Tool(
+            name="ScoresHidrofobicidad",
+            func=hydrophobicity_scores_tool_with_df,
+            description="Calcula y devuelve los scores promedio de hidrofobicidad para cada secuencia. No necesita argumentos."
+        ),
+        Tool(
+            name="DistribucionQ3",
+            func=q3_distribution_tool_with_df,
+            description="Devuelve la distribución de los estados secundarios Q3 del dataset. No necesita argumentos."
+        ),
+        Tool(
+            name="DistribucionQ8",
+            func=q8_distribution_tool_with_df,
+            description="Devuelve la distribución de los estados secundarios Q8 del dataset. No necesita argumentos."
         )
     ]
 
