@@ -6,3 +6,5 @@ jupyter
 matplotlib
 pandas
 networkx
+streamlit
+openpyxl
