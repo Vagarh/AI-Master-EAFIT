@@ -5,7 +5,10 @@ from fpdf import FPDF
 import matplotlib.pyplot as plt
 
 # Importar las funciones de ploteo para usarlas en el reporte
-from eda import plot_length_distribution, plot_q3_distribution, plot_nonstd_aa_pie
+from eda import (
+    plot_length_distribution, plot_q3_distribution, plot_nonstd_aa_pie,
+    plot_resolution_distribution, plot_rfactor_distribution, plot_experimental_methods, plot_length_vs_resolution
+)
 
 def generate_report(eda_ok, df):
     """
@@ -107,7 +110,7 @@ def generate_pdf_report(eda_ok, df):
     pdf.chapter_title("4. Estadísticas Descriptivas")
     pdf.chapter_body(df.select_dtypes("number").describe().T.to_string())
 
-    # Añadir gráficos
+    # Añadir gráficos de secuencia
     fig_len = plot_length_distribution(df)
     pdf.add_plot(fig_len, "5. Distribución de la Longitud de las Secuencias")
 
@@ -116,5 +119,24 @@ def generate_pdf_report(eda_ok, df):
 
     fig_pie = plot_nonstd_aa_pie(df)
     pdf.add_plot(fig_pie, "7. Proporción de Aminoácidos No Estándar")
+
+    # Añadir gráficos de calidad estructural si las columnas existen
+    # Se usa un contador para los títulos de los capítulos para que sean secuenciales
+    chapter_num = 8
+    if 'resolution' in df.columns:
+        fig_res = plot_resolution_distribution(df)
+        pdf.add_plot(fig_res, f"{chapter_num}. Distribución de Resoluciones")
+        chapter_num += 1
+    if 'R-factor' in df.columns:
+        fig_r = plot_rfactor_distribution(df)
+        pdf.add_plot(fig_r, f"{chapter_num}. Distribución del R-factor")
+        chapter_num += 1
+    if 'Exptl.' in df.columns:
+        fig_exp = plot_experimental_methods(df)
+        pdf.add_plot(fig_exp, f"{chapter_num}. Métodos Experimentales")
+        chapter_num += 1
+    if 'len' in df.columns and 'resolution' in df.columns:
+        fig_len_res = plot_length_vs_resolution(df)
+        pdf.add_plot(fig_len_res, f"{chapter_num}. Relación Longitud vs. Resolución")
 
     return bytes(pdf.output())

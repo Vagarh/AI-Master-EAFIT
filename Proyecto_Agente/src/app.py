@@ -4,7 +4,10 @@ import os
 from io import StringIO
 import sys
 from io_utils import read_any
-from eda import validate_eda, plot_length_distribution, plot_q3_distribution, plot_nonstd_aa_pie
+from eda import (
+    validate_eda, plot_length_distribution, plot_q3_distribution, plot_nonstd_aa_pie,
+    plot_resolution_distribution, plot_rfactor_distribution, plot_experimental_methods, plot_length_vs_resolution
+)
 from report import generate_report, generate_pdf_report
 from mail import send_email
 from agent import ProteinAnalysisAgent
@@ -228,20 +231,46 @@ with tab_dashboard:
                 col2.metric("Longitud Promedio", avg_len)
                 col3.metric("Con AA No Estándar", non_std_pct)
 
-                # --- Visualizaciones (usando el dataframe filtrado) ---
+                # --- Visualizaciones de Secuencia (usando el dataframe filtrado) ---
                 st.markdown("#### Distribución de la Longitud de las Secuencias")
-                fig_len = plot_length_distribution(df_filtered) # Aquí estaba el error!
+                fig_len = plot_length_distribution(df_filtered)
                 st.pyplot(fig_len)
 
                 col_viz1, col_viz2 = st.columns(2)
                 with col_viz1:
                     st.markdown("#### Frecuencia de Estructuras (Q3)")
-                    fig_q3 = plot_q3_distribution(df_filtered) # Aquí estaba el error!
+                    fig_q3 = plot_q3_distribution(df_filtered)
                     st.pyplot(fig_q3)
                 with col_viz2:
                     st.markdown("#### Proporción de Aminoácidos No Estándar")
                     fig_pie = plot_nonstd_aa_pie(df_filtered)
                     st.pyplot(fig_pie)
+                
+                # --- Visualizaciones de Calidad Estructural ---
+                st.markdown("---")
+                st.markdown("### Análisis de Calidad Estructural")
+                st.markdown("Estos gráficos analizan las propiedades experimentales de las estructuras en el dataset.")
+
+                # Verificar si las columnas necesarias existen antes de plotear
+                if 'resolution' in df_filtered.columns:
+                    st.markdown("#### Distribución de Resoluciones")
+                    fig_res = plot_resolution_distribution(df_filtered)
+                    st.pyplot(fig_res)
+                
+                if 'R-factor' in df_filtered.columns:
+                    st.markdown("#### Distribución del R-factor")
+                    fig_r = plot_rfactor_distribution(df_filtered)
+                    st.pyplot(fig_r)
+
+                if 'Exptl.' in df_filtered.columns:
+                    st.markdown("#### Métodos Experimentales")
+                    fig_exp = plot_experimental_methods(df_filtered)
+                    st.pyplot(fig_exp)
+
+                if 'len' in df_filtered.columns and 'resolution' in df_filtered.columns:
+                    st.markdown("#### Longitud vs. Resolución")
+                    fig_len_res = plot_length_vs_resolution(df_filtered)
+                    st.pyplot(fig_len_res)
             else:
                 st.warning("No hay datos que mostrar con los filtros seleccionados.")
         else:
