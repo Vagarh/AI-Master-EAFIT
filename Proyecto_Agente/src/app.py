@@ -131,9 +131,22 @@ if start and ready:
         info_str = buffer.getvalue()
         desc_str = df.describe().to_string()
         st.session_state.eda_context = f"Resumen del Dataset:\n{info_str}\n\nEstadísticas Descriptivas:\n{desc_str}"
-    
-    st.success("Análisis iniciado")
 
+    st.success("Análisis completado. ¡Ya puedes chatear con el agente!")
+
+    # --- Mensaje de bienvenida del agente ---
+    # Para mejorar la experiencia de usuario, el agente inicia la conversación
+    # en lugar de esperar a que el usuario escriba primero.
+    if st.session_state.agent and st.session_state.eda_ok:
+        welcome_message = (
+            "¡Hola! Soy tu asistente de análisis de proteínas. He procesado tu dataset y estoy listo para ayudarte. "
+            "Puedes explorar el Análisis Exploratorio de Datos (EDA) en la otra pestaña o hacerme preguntas directamente. \n\n"
+            "**Aquí tienes algunas ideas para empezar:**\n"
+            "- '¿Cuál es la longitud promedio de las secuencias?'\n"
+            "- 'Resume las características principales del dataset.'\n"
+            "- 'Toma la primera secuencia y búscala en BLAST.'"
+        )
+        st.session_state.messages = [{"role": "assistant", "content": welcome_message}]
 # ---- Tabs: Chat y EDA ----
 tab_chat, tab_eda = st.tabs(["Chat del agente", "EDA"])
 
@@ -163,7 +176,12 @@ with tab_chat:
         with st.chat_message("assistant"):
             with st.spinner("Pensando..."):
                 if st.session_state.agent:
-                    assistant_reply = st.session_state.agent.chat(st.session_state.eda_context, user_msg)
+                    # Pasamos el historial de chat (todos los mensajes excepto el último del usuario)
+                    # para que el agente tenga memoria de la conversación.
+                    chat_history = st.session_state.messages[:-1]
+                    assistant_reply = st.session_state.agent.chat(
+                        context=st.session_state.eda_context, user_question=user_msg, chat_history=chat_history
+                    )
                     st.markdown(assistant_reply)
                     st.session_state.messages.append({"role": "assistant", "content": assistant_reply})
                 else:

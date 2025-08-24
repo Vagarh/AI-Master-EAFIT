@@ -2,6 +2,7 @@ import os
 import json
 from litellm import completion
 from tools import run_blast_search
+from context_builder import build_messages
 
 class ProteinAnalysisAgent:
     def __init__(self, api_key=None):
@@ -11,12 +12,13 @@ class ProteinAnalysisAgent:
         if not self.api_key:
             raise ValueError("API key for Hugging Face not found. Please provide it in the UI or set the HUGGING_FACE_API_KEY environment variable.")
 
-    def chat(self, context, user_question):
+    def chat(self, context: str, user_question: str, chat_history: list = None):
         """
         Genera una respuesta utilizando un LLM. El agente puede decidir usar herramientas
-        como BLAST para responder preguntas que van más allá del contexto del EDA.
+        como BLAST para responder preguntas y mantiene el contexto de la conversación.
         """
-        # 1. Definir las herramientas que el agente puede usar
+        chat_history = chat_history or []
+        # 1. Definir las herramientas disponibles para esta llamada
         tools = [
             {
                 "type": "function",
@@ -42,32 +44,15 @@ class ProteinAnalysisAgent:
             }
         ]
 
-        system_prompt = (
-            "Eres un experto en biología molecular y análisis de datos de proteínas. "
-            "Tu rol es actuar como un asistente inteligente para un científico de datos. "
-            "Se te proporcionará un contexto que consiste en un Análisis Exploratorio de Datos (EDA) de un dataset de proteínas. "
-            "También tienes acceso a herramientas bioinformáticas como BLAST. "
-            "Si la pregunta del usuario puede ser respondida con el contexto del EDA, úsalo. "
-            "Si la pregunta requiere información externa sobre una secuencia específica (ej. '¿qué función tiene esta secuencia?', '¿a qué se parece esta proteína?'), "
-            "DEBES usar la herramienta 'run_blast_search'. "
-            "Responde de manera clara, concisa y fundamentada en los datos o en los resultados de las herramientas."
+        # 2. Construir los mensajes usando el nuevo protocolo
+        messages = build_messages(
+            eda_context=context,
+            user_question=user_question,
+            chat_history=chat_history
         )
-        
-        human_prompt = (
-            f"Contexto del EDA:\n"
-            f"--- CONTEXTO ---\n"
-            f"{context}\n"
-            f"--- FIN DEL CONTEXTO ---\n\n"
-            f"Pregunta del usuario: {user_question}"
-        )
-
-        messages = [
-            {"role": "system", "content": system_prompt},
-            {"role": "user", "content": human_prompt}
-        ]
         
         try:
-            # 2. Primera llamada: El LLM decide si usa una herramienta
+            # 3. Primera llamada: El LLM decide si usa una herramienta
             response = completion(
                 model="huggingface/together/deepseek-ai/DeepSeek-R1",
                 messages=messages,
@@ -78,7 +63,7 @@ class ProteinAnalysisAgent:
 
             response_message = response.choices[0].message
 
-            # 3. Segunda etapa: Ejecutar la herramienta si el LLM lo solicita
+            # 4. Segunda etapa: Ejecutar la herramienta si el LLM lo solicita
             if response_message.tool_calls:
                 tool_call = response_message.tool_calls[0]
                 function_name = tool_call.function.name
