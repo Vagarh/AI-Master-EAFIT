@@ -24,11 +24,24 @@ if "eda_context" not in st.session_state: st.session_state.eda_context = ""
 
 # ---- Sidebar: Panel de proyecto ----
 st.sidebar.title("Agente de Análisis de Proteínas")
-st.sidebar.markdown("""
-**Autor:** Helios
-**Funcionalidad:** Carga dataset, EDA básico y chat con agente.
-**Dominio:** Secuencias y estructuras secundarias (Q3/Q8).
-""")
+st.sidebar.markdown(
+    """
+    **Autor:** [Juan Felipe Cardona](https://www.linkedin.com/in/juan-felipe-c-8a010b121/)
+    **Repositorio:** [GitHub](https://github.com/Vagarh/AI-Master-EAFIT)
+
+    ---
+
+    Esta herramienta permite el análisis interactivo de datasets de proteínas. 
+    Carga tus datos, explora las visualizaciones del EDA y conversa con un agente 
+    de IA para obtener insights sobre la estructura y composición de las secuencias.
+
+    ---
+    **Tecnologías:**
+    - `Streamlit`, `Pandas`, `Matplotlib`, `Seaborn`, `fpdf2`
+    
+    **Modelo LLM:** `deepseek-ai/DeepSeek-R1` (vía Hugging Face)
+    """
+)
 
 api_key = st.sidebar.text_input("HuggingFace API Key", type="password", help="Se requiere para habilitar el análisis.")
 email_to = st.sidebar.text_input("Enviar resultados a (opcional)")
