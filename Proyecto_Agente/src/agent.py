@@ -4,6 +4,8 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
+GEMINI_API_KEY="AIzaSyB5-wThBiGdbR4xWeYXhHj8Ry2r1BLJw-4"
+
 class ProteinAnalysisAgent:
     def __init__(self):
         self.api_key = os.getenv("GEMINI_API_KEY")
