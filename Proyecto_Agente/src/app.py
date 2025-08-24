@@ -1,9 +1,12 @@
 import streamlit as st
 import pandas as pd
+from io import StringIO
+import sys
 from io_utils import read_any
 from eda import validate_eda
 from report import generate_report
 from mail import send_email
+from agent import ProteinAnalysisAgent
 
 st.set_page_config(page_title="Agente de Análisis de Proteínas", layout="wide")
 
@@ -12,6 +15,8 @@ if "df" not in st.session_state: st.session_state.df = None
 if "messages" not in st.session_state: st.session_state.messages = []
 if "eda_ok" not in st.session_state: st.session_state.eda_ok = False
 if "ran" not in st.session_state: st.session_state.ran = False
+if "agent" not in st.session_state: st.session_state.agent = None
+if "eda_context" not in st.session_state: st.session_state.eda_context = ""
 
 # ---- Sidebar: Panel de proyecto ----
 st.sidebar.title("Agente de Análisis de Proteínas")
@@ -30,6 +35,8 @@ if st.sidebar.button("Restablecer"):
     st.session_state.messages = []
     st.session_state.eda_ok = False
     st.session_state.ran = False
+    st.session_state.agent = None
+    st.session_state.eda_context = ""
     st.rerun()
 
 # ---- Carga de datos ----
@@ -50,12 +57,28 @@ with col1:
 with col2:
     st.metric("API key", "OK" if api_key else "Pendiente")
 
+# ---- Inicialización del Agente ----
+if api_key and not st.session_state.agent:
+    try:
+        st.session_state.agent = ProteinAnalysisAgent()
+    except ValueError as e:
+        st.error(e)
+
 # ---- Botón de análisis ----
 start = st.button("Iniciar análisis", disabled=not ready)
 if start and ready:
     df = st.session_state.df
     st.session_state.eda_ok = validate_eda(df)
     st.session_state.ran = True
+
+    # Generar contexto de EDA para el agente
+    if st.session_state.eda_ok:
+        buffer = StringIO()
+        df.info(buf=buffer)
+        info_str = buffer.getvalue()
+        desc_str = df.describe().to_string()
+        st.session_state.eda_context = f"Resumen del Dataset:\n{info_str}\n\nEstadísticas Descriptivas:\n{desc_str}"
+    
     st.success("Análisis iniciado")
 
 # ---- Tabs: Chat y EDA ----
@@ -64,14 +87,24 @@ tab_chat, tab_eda = st.tabs(["Chat del agente", "EDA"])
 with tab_chat:
     st.subheader("Historial")
     for m in st.session_state.messages:
-        st.markdown(f"- **{m['role']}**: {m['content']}")
-    user_msg = st.chat_input("Escribe tu mensaje")
+        with st.chat_message(m['role']):
+            st.markdown(m['content'])
+            
+    user_msg = st.chat_input("Escribe tu mensaje", disabled=(not st.session_state.ran or not st.session_state.agent))
+    
     if user_msg:
-        st.session_state.messages.append({"role":"user", "content":user_msg})
-        # Aquí llamarías a tu backend/LLM con api_key y contexto
-        assistant_reply = "Respuesta del agente (placeholder)."
-        st.session_state.messages.append({"role":"assistant", "content":assistant_reply})
-        st.rerun()
+        st.session_state.messages.append({"role": "user", "content": user_msg})
+        with st.chat_message("user"):
+            st.markdown(user_msg)
+            
+        with st.chat_message("assistant"):
+            with st.spinner("Pensando..."):
+                if st.session_state.agent:
+                    assistant_reply = st.session_state.agent.chat(st.session_state.eda_context, user_msg)
+                    st.markdown(assistant_reply)
+                    st.session_state.messages.append({"role": "assistant", "content": assistant_reply})
+                else:
+                    st.error("El agente no está inicializado. Por favor, introduce una API key válida.")
 
 with tab_eda:
     if not st.session_state.ran:
@@ -86,7 +119,6 @@ with tab_eda:
             st.markdown("**Nulos por columna**")
             st.write(df.isna().sum().to_frame("nulos"))
             st.markdown("**Estadísticos**")
-            # Solo para numéricas
             st.write(df.select_dtypes("number").describe().T)
         else:
             st.warning("EDA no disponible: faltan columnas mínimas {'seq','sst3','sst8','len','has_nonstd_aa'}")
@@ -109,3 +141,4 @@ if send_btn:
         report_content = generate_report(st.session_state.eda_ok, st.session_state.df)
         ok = send_email(email_to, "Resultados del análisis", report_content)
         st.success("Correo enviado") if ok else st.error("Fallo al enviar. Revisa SMTP_* en variables de entorno.")
+
