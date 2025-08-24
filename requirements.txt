@@ -5,6 +5,8 @@ pydantic
 jupyter
 matplotlib
 pandas
+seaborn
 networkx
 streamlit
 openpyxl
+biopython
