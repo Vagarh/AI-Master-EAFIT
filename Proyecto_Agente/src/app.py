@@ -147,8 +147,8 @@ if start and ready:
             "- 'Toma la primera secuencia y búscala en BLAST.'"
         )
         st.session_state.messages = [{"role": "assistant", "content": welcome_message}]
-# ---- Tabs: Chat y EDA ----
-tab_chat, tab_eda = st.tabs(["Chat del agente", "EDA"])
+# ---- Tabs: Chat, Dashboard y EDA ----
+tab_chat, tab_dashboard, tab_eda = st.tabs(["Chat del agente", "Dashboard de Insights", "Exploración de Datos (EDA)"])
 
 with tab_chat:
     st.subheader("Historial")
@@ -187,42 +187,83 @@ with tab_chat:
                 else:
                     st.error("El agente no está inicializado. Por favor, introduce una API key válida.")
 
-with tab_eda:
+with tab_dashboard:
     if not st.session_state.ran:
-        st.info("EDA no ejecutado. Carga dataset y API key, luego pulsa Iniciar análisis.")
+        st.info("Ejecuta el análisis para ver el dashboard de insights.")
     else:
         if st.session_state.eda_ok:
             df = st.session_state.df
-            st.markdown("**EDA disponible**")
-            st.markdown(f"- Filas: {df.shape[0]} | Columnas: {df.shape[1]}")
-            st.markdown("**Vista previa**")
-            st.dataframe(df.head(20))
-            st.markdown("**Nulos por columna**")
-            st.write(df.isna().sum().to_frame("nulos"))
-            st.markdown("**Estadísticos**")
-            st.write(df.select_dtypes("number").describe().T)
+            st.subheader("Dashboard de Insights del Dataset")
+            st.markdown("Utiliza los filtros para explorar subconjuntos de datos. Los gráficos y métricas se actualizarán automáticamente.")
 
-            # --- Visualizaciones ---
+            # --- FILTROS DEL DASHBOARD ---
             st.markdown("---")
-            st.subheader("Visualizaciones del Dataset")
+            st.markdown("#### Filtros Interactivos")
+            
+            # Filtro por longitud de secuencia
+            min_len, max_len = int(df['len'].min()), int(df['len'].max())
+            selected_len_range = st.slider(
+                "Filtrar por longitud de secuencia:",
+                min_value=min_len,
+                max_value=max_len,
+                value=(min_len, max_len)
+            )
 
-            # Plot 1: Distribución de longitud
-            st.markdown("#### Distribución de la Longitud de las Secuencias")
-            fig_len = plot_length_distribution(df)
-            st.pyplot(fig_len)
+            # Aplicar filtros al dataframe
+            df_filtered = df[
+                (df['len'] >= selected_len_range[0]) & (df['len'] <= selected_len_range[1])
+            ]
+            
+            st.info(f"Mostrando **{len(df_filtered):,}** de **{len(df):,}** secuencias según los filtros aplicados.")
+            st.markdown("---")
 
-            # Plots 2 y 3 en columnas
-            col1, col2 = st.columns(2)
-            with col1:
-                st.markdown("#### Frecuencia de Estructuras (Q3)")
-                fig_q3 = plot_q3_distribution(df)
-                st.pyplot(fig_q3)
-            with col2:
-                st.markdown("#### Proporción de Aminoácidos No Estándar")
-                fig_pie = plot_nonstd_aa_pie(df)
-                st.pyplot(fig_pie)
+            # Métricas clave (usando el dataframe filtrado)
+            col1, col2, col3 = st.columns(3)
+            col1.metric("Total de Secuencias (filtrado)", f"{df_filtered.shape[0]:,}")
+
+            if not df_filtered.empty:
+                avg_len = f"{df_filtered['len'].mean():.0f} AA"
+                non_std_pct = f"{df_filtered['has_nonstd_aa'].sum() / len(df_filtered):.1%}"
+                
+                col2.metric("Longitud Promedio", avg_len)
+                col3.metric("Con AA No Estándar", non_std_pct)
+
+                # --- Visualizaciones (usando el dataframe filtrado) ---
+                st.markdown("#### Distribución de la Longitud de las Secuencias")
+                fig_len = plot_length_distribution(df_filtered) # Aquí estaba el error!
+                st.pyplot(fig_len)
+
+                col_viz1, col_viz2 = st.columns(2)
+                with col_viz1:
+                    st.markdown("#### Frecuencia de Estructuras (Q3)")
+                    fig_q3 = plot_q3_distribution(df_filtered) # Aquí estaba el error!
+                    st.pyplot(fig_q3)
+                with col_viz2:
+                    st.markdown("#### Proporción de Aminoácidos No Estándar")
+                    fig_pie = plot_nonstd_aa_pie(df_filtered)
+                    st.pyplot(fig_pie)
+            else:
+                st.warning("No hay datos que mostrar con los filtros seleccionados.")
         else:
-            st.warning("EDA no disponible: faltan columnas mínimas {'seq','sst3','sst8','len','has_nonstd_aa'}")
+            st.warning("Dashboard no disponible: faltan columnas mínimas para el análisis.")
+
+with tab_eda:
+    if not st.session_state.ran:
+        st.info("Ejecuta el análisis para explorar los datos en detalle.")
+    else:
+        if st.session_state.eda_ok:
+            df = st.session_state.df
+            st.subheader("Exploración Detallada de Datos")
+            st.markdown("Aquí puedes inspeccionar la estructura y los valores del dataset.")
+            st.markdown(f"**Dimensiones:** {df.shape[0]} filas x {df.shape[1]} columnas")
+            st.markdown("**Vista previa del dataset**")
+            st.dataframe(df.head(20))
+            st.markdown("**Resumen de valores nulos por columna**")
+            st.write(df.isna().sum().to_frame("nulos"))
+            st.markdown("**Estadísticas descriptivas de columnas numéricas**")
+            st.write(df.select_dtypes("number").describe().T)
+        else:
+            st.warning("Exploración no disponible: faltan columnas mínimas {'seq','sst3','sst8','len','has_nonstd_aa'}")
 
 # ---- Reporte y envío ----
 st.markdown("---")
