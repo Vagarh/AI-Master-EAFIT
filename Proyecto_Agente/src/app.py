@@ -3,8 +3,8 @@ import pandas as pd
 from io import StringIO
 import sys
 from io_utils import read_any
-from eda import validate_eda
-from report import generate_report
+from eda import validate_eda, plot_length_distribution, plot_q3_distribution, plot_nonstd_aa_pie
+from report import generate_report, generate_pdf_report
 from mail import send_email
 from agent import ProteinAnalysisAgent
 from dotenv import load_dotenv
@@ -124,6 +124,26 @@ with tab_eda:
             st.write(df.isna().sum().to_frame("nulos"))
             st.markdown("**Estadísticos**")
             st.write(df.select_dtypes("number").describe().T)
+
+            # --- Visualizaciones ---
+            st.markdown("---")
+            st.subheader("Visualizaciones del Dataset")
+
+            # Plot 1: Distribución de longitud
+            st.markdown("#### Distribución de la Longitud de las Secuencias")
+            fig_len = plot_length_distribution(df)
+            st.pyplot(fig_len)
+
+            # Plots 2 y 3 en columnas
+            col1, col2 = st.columns(2)
+            with col1:
+                st.markdown("#### Frecuencia de Estructuras (Q3)")
+                fig_q3 = plot_q3_distribution(df)
+                st.pyplot(fig_q3)
+            with col2:
+                st.markdown("#### Proporción de Aminoácidos No Estándar")
+                fig_pie = plot_nonstd_aa_pie(df)
+                st.pyplot(fig_pie)
         else:
             st.warning("EDA no disponible: faltan columnas mínimas {'seq','sst3','sst8','len','has_nonstd_aa'}")
 
@@ -134,27 +154,35 @@ st.subheader("Resultados")
 if not st.session_state.ran:
     st.info("Ejecuta el análisis para poder generar y enviar el reporte.")
 else:
-    # Generar el contenido del reporte una sola vez para usarlo en ambas funciones
-    report_content = generate_report(st.session_state.eda_ok, st.session_state.df)
+    with st.spinner("Generando reporte PDF..."):
+        report_content_pdf = generate_pdf_report(st.session_state.eda_ok, st.session_state.df)
 
-    # --- Botón de descarga ---
-    # st.download_button es un widget que gestiona su propio estado.
-    # No debe estar dentro de un if que dependa de otro botón.
-    st.download_button(
-        label="Descargar reporte (.txt)",
-        data=report_content,
-        file_name="reporte.txt",
-        mime="text/plain"
-    )
+    col1, col2 = st.columns(2)
 
-    # --- Botón de envío por correo ---
-    if st.button("Enviar reporte por email"):
-        if not email_to:
-            st.warning("Por favor, introduce una dirección de correo en el panel de la izquierda.")
-        else:
-            with st.spinner("Enviando correo..."):
-                ok, message = send_email(email_to, "Resultados del análisis", report_content)
-                if ok:
-                    st.success(message)
-                else:
-                    st.error(message)
+    with col1:
+        # --- Botón de descarga ---
+        st.download_button(
+            label="Descargar reporte (.pdf)",
+            data=report_content_pdf,
+            file_name="reporte_analisis_proteinas.pdf",
+            mime="application/pdf"
+        )
+
+    with col2:
+        # --- Botón de envío por correo ---
+        if st.button("Enviar reporte por email"):
+            if not email_to:
+                st.warning("Por favor, introduce una dirección de correo en el panel de la izquierda.")
+            else:
+                with st.spinner("Enviando correo..."):
+                    email_body = "Adjunto encontrarás el reporte de análisis de proteínas generado por el agente inteligente."
+                    ok, message = send_email(email_to, 
+                                             "Reporte de Análisis de Proteínas", 
+                                             email_body,
+                                             attachment_data=report_content_pdf,
+                                             attachment_filename="reporte.pdf",
+                                             attachment_mimetype="application/pdf")
+                    if ok:
+                        st.success(message)
+                    else:
+                        st.error(message)

@@ -2,7 +2,7 @@ import os
 import smtplib
 from email.message import EmailMessage
 
-def send_email(to_addr, subject, body):
+def send_email(to_addr, subject, body, attachment_data=None, attachment_filename=None, attachment_mimetype=None):
     # 1. Validar variables de entorno
     host = os.getenv("SMTP_HOST")
     user = os.getenv("SMTP_USER")
@@ -31,6 +31,13 @@ def send_email(to_addr, subject, body):
     msg["To"] = to_addr
     msg["Subject"] = subject
     msg.set_content(body)
+
+    if attachment_data and attachment_filename and attachment_mimetype:
+        maintype, subtype = attachment_mimetype.split('/', 1)
+        msg.add_attachment(attachment_data,
+                           maintype=maintype,
+                           subtype=subtype,
+                           filename=attachment_filename)
     try:
         with smtplib.SMTP(host, port) as s:
             s.starttls()
