@@ -1,5 +1,6 @@
 import streamlit as st
 import pandas as pd
+import os
 from io import StringIO
 import sys
 from io_utils import read_any
@@ -9,19 +10,28 @@ from mail import send_email
 from agent import ProteinAnalysisAgent
 from dotenv import load_dotenv
 
+
 # Cargar variables de entorno desde el archivo .env
 # Esto debe hacerse al principio del script
 load_dotenv()
 st.set_page_config(page_title="Agente de Análisis de Proteínas", layout="wide")
 
-# ---- Estado ----
-if "df" not in st.session_state: st.session_state.df = None
-if "messages" not in st.session_state: st.session_state.messages = []
-if "eda_ok" not in st.session_state: st.session_state.eda_ok = False
-if "ran" not in st.session_state: st.session_state.ran = False
-if "agent" not in st.session_state: st.session_state.agent = None
-if "eda_context" not in st.session_state: st.session_state.eda_context = ""
+# ---- Constantes y Rutas ----
+_SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
+_PROJECT_ROOT = os.path.dirname(_SCRIPT_DIR)
+EXAMPLE_FILENAME = "2018-06-06-pdb-intersect-pisces.csv"
+EXAMPLE_FILE_PATH = os.path.join(_PROJECT_ROOT, EXAMPLE_FILENAME)
 
+# ---- Estado ----
+def initialize_state():
+    """Inicializa el estado de la sesión si es necesario."""
+    defaults = {"df": None, "messages": [], "eda_ok": False, "ran": False, "agent": None, "eda_context": ""}
+    for key, value in defaults.items():
+        if key not in st.session_state:
+            st.session_state[key] = value
+
+initialize_state()
+            
 # ---- Sidebar: Panel de proyecto ----
 st.sidebar.title("Agente de Análisis de Proteínas")
 st.sidebar.markdown(
@@ -37,34 +47,59 @@ st.sidebar.markdown(
 
     ---
     **Tecnologías:**
-    - `Streamlit`, `Pandas`, `Matplotlib`, `Seaborn`, `fpdf2`
+    - `Streamlit`, `Pandas`, `Matplotlib`, `Seaborn`, `fpdf2`, `Biopython`
     
+    BLAST para búsqueda de secuencias.
+
     **Modelo LLM:** `deepseek-ai/DeepSeek-R1` (vía Hugging Face)
     """
 )
-
 api_key = st.sidebar.text_input("HuggingFace API Key", type="password", help="Se requiere para habilitar el análisis.")
 email_to = st.sidebar.text_input("Enviar resultados a (opcional)")
 
 st.sidebar.markdown("---")
-if st.sidebar.button("Restablecer"):
-    st.session_state.df = None
-    st.session_state.messages = []
-    st.session_state.eda_ok = False
-    st.session_state.ran = False
-    st.session_state.agent = None
-    st.session_state.eda_context = ""
+
+def reset_session():
+    """Limpia el estado de la sesión y reinicia la aplicación."""
+    st.session_state.clear()
+    initialize_state()
     st.rerun()
+
+if st.sidebar.button("Restablecer"):
+    reset_session()
 
 # ---- Carga de datos ----
 st.header("Carga de dataset")
-file = st.file_uploader("Sube un .csv, .xls o .xlsx", type=["csv","xls","xlsx"])
 
-if file:
-    st.session_state.df = read_any(file)
-    if st.session_state.df is not None:
-        st.success(f"Dataset cargado: {st.session_state.df.shape[0]} filas x {st.session_state.df.shape[1]} columnas")
+data_options = ["Subir un archivo", "Usar datos de ejemplo"]
+data_choice = st.radio("Selecciona la fuente de datos:", data_options)
 
+if data_choice == "Subir un archivo":
+    file = st.file_uploader(
+        "Sube un .csv, .xls o .xlsx",
+        type=["csv", "xls", "xlsx"],
+        accept_multiple_files=False
+    )
+    if file:
+        st.session_state.df = read_any(file)
+        if st.session_state.df is not None:
+            st.success(f"Dataset cargado: {st.session_state.df.shape[0]} filas x {st.session_state.df.shape[1]} columnas")
+    else:
+        # Clear dataframe if no file is uploaded in this mode
+        st.session_state.df = None
+else:  # "Usar datos de ejemplo"
+    if os.path.exists(EXAMPLE_FILE_PATH):
+        st.info(
+            f"Se cargará el dataset de ejemplo '{EXAMPLE_FILENAME}'. Puedes encontrar este archivo en el repositorio del proyecto."
+        )
+        st.session_state.df = pd.read_csv(EXAMPLE_FILE_PATH)
+        if st.session_state.df is not None:
+            st.success(
+                f"Dataset de ejemplo cargado: {st.session_state.df.shape[0]} filas x {st.session_state.df.shape[1]} columnas"
+            )
+    else:
+        st.error(f"No se encontró el archivo de ejemplo. Se esperaba en: {EXAMPLE_FILE_PATH}")
+        st.session_state.df = None
 # ---- Reglas de habilitación ----
 ready = st.session_state.df is not None and bool(api_key)
 
@@ -78,6 +113,7 @@ with col2:
 if api_key and not st.session_state.agent:
     try:
         st.session_state.agent = ProteinAnalysisAgent(api_key=api_key)
+        st.info("¡Agente listo! Ahora puedes interactuar con tus datos.")
     except ValueError as e:
         st.error(e)
 
