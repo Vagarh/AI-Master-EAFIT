@@ -109,6 +109,16 @@ with tab_chat:
             
     user_msg = st.chat_input("Escribe tu mensaje", disabled=(not st.session_state.ran or not st.session_state.agent))
     
+    with st.expander("✨ Descubre las herramientas del agente"):
+        st.info(
+            "El agente puede usar herramientas externas como **BLAST** para responder preguntas "
+            "que van más allá de los datos cargados."
+        )
+        st.markdown("#### Prueba a preguntarle:")
+        st.code("Busca en BLAST la secuencia MKTAYIAKQRQISFVKSHFSRQLEERLGLIEVQAPILSRVGDGTQDNLSGAEKAVQVKVKALPDAQFEVVFVPPDE y resume los hallazgos.")
+        st.markdown("O también puedes preguntarle sobre una secuencia de tu propio dataset:")
+        st.code("Toma la primera secuencia del dataset, busca en BLAST y dime a qué se parece.")
+
     if user_msg:
         st.session_state.messages.append({"role": "user", "content": user_msg})
         with st.chat_message("user"):
