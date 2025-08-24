@@ -103,3 +103,36 @@ La organización de las carpetas es la siguiente:
 
 ---
 Gracias por tu ayuda.
+
+Esturctura del proyecto agente 
+
+Claro, aquí tienes un resumen de cada archivo en el directorio src de tu proyecto Proyecto_Agente:
+
+__init__.py: Este archivo está vacío. Su presencia le indica a Python que el directorio src debe ser tratado como un paquete, lo que permite importar los otros archivos (módulos) desde cualquier parte del proyecto.
+
+agent.py: Este archivo contiene la lógica central del agente de inteligencia artificial.
+
+Define la clase ProteinAnalysisAgent.
+Utiliza la librería litellm para conectarse a un modelo de lenguaje de Gemini (LLM).
+Tiene un método chat que recibe un contexto (un resumen del análisis de datos) y una pregunta del usuario.
+Envía esta información al modelo de Gemini, con un prompt que le instruye para que actúe como un experto en biología molecular, y devuelve la respuesta generada por la IA.
+app.py: Es la aplicación web principal construida con Streamlit. Se encarga de la interfaz de usuario y de orquestar todo el proceso.
+
+Crea la interfaz donde puedes cargar un archivo, introducir tu API key y una dirección de correo.
+Gestiona el flujo: Carga el dataset, valida que tenga las columnas necesarias, y si todo es correcto, activa el chat.
+Implementa una interfaz de chat para que puedas hacerle preguntas al ProteinAnalysisAgent.
+Muestra los resultados de un Análisis Exploratorio de Datos (EDA) básico en una pestaña separada.
+Permite generar y enviar un reporte por correo electrónico.
+eda.py: Contiene una función de validación simple.
+
+La función validate_eda comprueba si el archivo cargado contiene un conjunto mínimo de columnas requeridas (seq, sst3, sst8, etc.) para asegurar que el análisis se puede realizar correctamente.
+io_utils.py: Proporciona utilidades para la entrada/salida de datos.
+
+La función read_any está diseñada para leer de forma flexible diferentes tipos de archivos (CSV, Excel). Es inteligente porque intenta detectar automáticamente el separador en los archivos CSV, lo que evita errores de lectura.
+mail.py: Gestiona el envío de correos electrónicos.
+
+La función send_email utiliza las credenciales de un servidor SMTP (host, usuario, contraseña) guardadas en variables de entorno para enviar los resultados del análisis a la dirección de correo que especifiques.
+report.py: Se encarga de generar el reporte final.
+
+La función generate_report crea un resumen en formato de texto con los resultados clave del análisis, como las dimensiones del dataset y si la validación (EDA) fue exitosa. Este texto es lo que se descarga o se envía por correo.
+En resumen, tu proyecto es una aplicación web interactiva que permite a un usuario cargar datos de proteínas, realizar una validación básica y luego conversar con un agente de IA para obtener análisis e insights sobre esos datos.

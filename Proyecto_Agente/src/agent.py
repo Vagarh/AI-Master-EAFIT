@@ -1,16 +1,13 @@
 import os
 from litellm import completion
-from dotenv import load_dotenv
-
-load_dotenv()
-
-GEMINI_API_KEY="AIzaSyB5-wThBiGdbR4xWeYXhHj8Ry2r1BLJw-4"
 
 class ProteinAnalysisAgent:
-    def __init__(self):
-        self.api_key = os.getenv("GEMINI_API_KEY")
+    def __init__(self, api_key=None):
+        self.api_key = api_key
         if not self.api_key:
-            raise ValueError("API key for Gemini not found. Please set the GEMINI_API_KEY environment variable.")
+            self.api_key = os.getenv("HUGGING_FACE_API_KEY")
+        if not self.api_key:
+            raise ValueError("API key for Hugging Face not found. Please provide it in the UI or set the HUGGING_FACE_API_KEY environment variable.")
 
     def chat(self, context, user_question):
         """
@@ -40,7 +37,7 @@ class ProteinAnalysisAgent:
 
         try:
             response = completion(
-                model="gemini/gemini-pro", 
+                model="huggingface/together/deepseek-ai/DeepSeek-R1", 
                 messages=messages,
                 api_key=self.api_key
             )

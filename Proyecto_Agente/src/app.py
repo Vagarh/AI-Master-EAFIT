@@ -26,7 +26,7 @@ st.sidebar.markdown("""
 **Dominio:** Secuencias y estructuras secundarias (Q3/Q8).
 """)
 
-api_key = st.sidebar.text_input("API key", type="password", help="Se requiere para habilitar el análisis.")
+api_key = st.sidebar.text_input("HuggingFace API Key", type="password", help="Se requiere para habilitar el análisis.")
 email_to = st.sidebar.text_input("Enviar resultados a (opcional)")
 
 st.sidebar.markdown("---")
@@ -60,7 +60,7 @@ with col2:
 # ---- Inicialización del Agente ----
 if api_key and not st.session_state.agent:
     try:
-        st.session_state.agent = ProteinAnalysisAgent()
+        st.session_state.agent = ProteinAnalysisAgent(api_key=api_key)
     except ValueError as e:
         st.error(e)
 
