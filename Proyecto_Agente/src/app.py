@@ -55,9 +55,7 @@ st.sidebar.markdown(
     BLAST para búsqueda de secuencias.
 
     **Modelo LLM:** `deepseek-ai/DeepSeek-R1` (vía Hugging Face)
-    """
-)
-api_key = st.sidebar.text_input("HuggingFace API Key", type="password", help="Se requiere para habilitar el análisis.")
+    """)
 email_to = st.sidebar.text_input("Enviar resultados a (opcional)")
 
 st.sidebar.markdown("---")
@@ -70,6 +68,16 @@ def reset_session():
 
 if st.sidebar.button("Restablecer"):
     reset_session()
+
+# ---- Inicialización del Agente (desde variables de entorno) ----
+if not st.session_state.agent:
+    try:
+        # El constructor de ProteinAnalysisAgent buscará la variable de entorno HUGGING_FACE_API_KEY
+        st.session_state.agent = ProteinAnalysisAgent()
+    except ValueError as e:
+        # Si no se encuentra la API key, el agente no se crea.
+        # La UI mostrará que el agente no está listo.
+        st.session_state.agent = None
 
 # ---- Carga de datos ----
 st.header("Carga de dataset")
@@ -103,22 +111,20 @@ else:  # "Usar datos de ejemplo"
     else:
         st.error(f"No se encontró el archivo de ejemplo. Se esperaba en: {EXAMPLE_FILE_PATH}")
         st.session_state.df = None
+
 # ---- Reglas de habilitación ----
-ready = st.session_state.df is not None and bool(api_key)
+agent_ready = st.session_state.agent is not None
+ready = st.session_state.df is not None and agent_ready
 
 col1, col2 = st.columns(2)
 with col1:
     st.metric("Dataset", "OK" if st.session_state.df is not None else "Pendiente")
 with col2:
-    st.metric("API key", "OK" if api_key else "Pendiente")
+    st.metric("Agente de IA", "Listo" if agent_ready else "API Key no configurada")
 
-# ---- Inicialización del Agente ----
-if api_key and not st.session_state.agent:
-    try:
-        st.session_state.agent = ProteinAnalysisAgent(api_key=api_key)
-        st.info("¡Agente listo! Ahora puedes interactuar con tus datos.")
-    except ValueError as e:
-        st.error(e)
+if not agent_ready:
+    st.warning("La API Key de Hugging Face no está configurada. Para habilitar el agente, define la variable de entorno `HUGGING_FACE_API_KEY` en tu sistema o en un archivo `.env`.")
+
 
 # ---- Botón de análisis ----
 start = st.button("Iniciar análisis", disabled=not ready)

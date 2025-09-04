@@ -10,7 +10,7 @@ class ProteinAnalysisAgent:
         if not self.api_key:
             self.api_key = os.getenv("HUGGING_FACE_API_KEY")
         if not self.api_key:
-            raise ValueError("API key for Hugging Face not found. Please provide it in the UI or set the HUGGING_FACE_API_KEY environment variable.")
+            raise ValueError("API key for Hugging Face not found. Please set the HUGGING_FACE_API_KEY environment variable.")
 
     def chat(self, context: str, user_question: str, chat_history: list = None):
         """

@@ -1,0 +1,19 @@
+# Archivos de entorno
+# ¡NUNCA subas este archivo a tu repositorio! Contiene secretos.
+.env
+
+# Entornos virtuales de Python
+env/
+venv/
+*.venv
+
+# Archivos de caché de Python
+__pycache__/
+*.py[cod]
+
+# Carpetas de configuración de IDEs
+.vscode/
+.idea/
+
+# Archivos del sistema operativo
+.DS_Store
