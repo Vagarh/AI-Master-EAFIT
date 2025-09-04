@@ -1,7 +1,7 @@
 import os
 import json
 from litellm import completion
-from tools import run_blast_search
+from tools import run_blast_search, fetch_pdb_data
 from context_builder import build_messages
 
 class ProteinAnalysisAgent:
@@ -41,6 +41,23 @@ class ProteinAnalysisAgent:
                         "required": ["sequence"],
                     },
                 },
+            },
+            {
+                "type": "function",
+                "function": {
+                    "name": "fetch_pdb_data",
+                    "description": "Busca y devuelve metadatos para un ID de PDB específico (ej. '2HHB') desde la base de datos de RCSB PDB.",
+                    "parameters": {
+                        "type": "object",
+                        "properties": {
+                            "pdb_id": {
+                                "type": "string",
+                                "description": "El ID de 4 caracteres del Protein Data Bank a buscar.",
+                            }
+                        },
+                        "required": ["pdb_id"],
+                    },
+                },
             }
         ]
 
@@ -73,6 +90,11 @@ class ProteinAnalysisAgent:
                     tool_result = run_blast_search(
                         sequence=function_args.get("sequence"),
                         top_n=function_args.get("top_n", 3)
+                    )
+                    messages.append(response_message)
+                elif function_name == "fetch_pdb_data":
+                    tool_result = fetch_pdb_data(
+                        pdb_id=function_args.get("pdb_id")
                     )
                     messages.append(response_message)
                     messages.append({"role": "tool", "tool_call_id": tool_call.id, "name": function_name, "content": tool_result})
