@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # 🤖 Instrucciones para el Asistente de IA (Gemini)
 
 Hola Gemini. Este archivo te proporciona el contexto esencial sobre este proyecto para que puedas ayudarme de la manera más efectiva posible. Por favor, lee y ten en cuenta esta información en tus respuestas.

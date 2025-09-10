@@ -1,8 +1,13 @@
 google-adk==1.4.2
-litellm==1.73.0
+litellm>=1.37.0
 python-dotenv
 pydantic
 jupyter
 matplotlib
 pandas
+seaborn
 networkx
+streamlit
+openpyxl
+biopython
+fpdf2>=2.7.0
