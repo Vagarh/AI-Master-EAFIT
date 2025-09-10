@@ -1,5 +1,5 @@
 {
-  "name": "Automated LinkedIn Content Creation with GPT-4 and DALL-E for Scheduled Posts copy",
+  "name": "Automated LinkedIn Content Creation with GPT-4 and Gemini for Scheduled Posts",
   "nodes": [
     {
       "parameters": {
@@ -10,7 +10,7 @@
           "systemMessage": "You are a helpful assistant"
         }
       },
-      "id": "4539cb55-b508-4b10-8a78-7a42257c3644",
+      "id": "2e2454d2-c997-4df6-9b20-d8346b3265f3",
       "name": "Content topic generator2",
       "type": "@n8n/n8n-nodes-langchain.agent",
       "position": [
@@ -28,11 +28,11 @@
         },
         "options": {}
       },
-      "id": "399c7832-7aaf-47a1-b37a-75cc168437cd",
+      "id": "5a66d832-24bc-4764-a660-276dba12c03a",
       "name": "OpenAI Chat Model",
       "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
       "position": [
-        720,
+        656,
         480
       ],
       "typeVersion": 1.2,
@@ -42,19 +42,6 @@
           "name": "OpenAi account"
         }
       }
-    },
-    {
-      "parameters": {
-        "jsonSchemaExample": "[{\n \"title\": \"AI as Your First Content Hire: Why Founders Shouldn't Wait to Outsource Creation\",\n            \"rationale\": \"Most solopreneurs delay content scaling because they think hiring a ghostwriter is the next step — but AI can handle 80% with proper systems. This shifts content from a creative bottleneck to a scalable growth lever.\",\n            \"hook\": \"Ghostwriters are outdated. Train GPT once, and it ships LinkedIn gold in your voice daily. Welcome to hands-free thought leadership.\"\n          }]"
-      },
-      "id": "739bbcfa-150f-453a-a8d2-a4d4b1c08585",
-      "name": "Structured Output Parser",
-      "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
-      "position": [
-        896,
-        464
-      ],
-      "typeVersion": 1.2
     },
     {
       "parameters": {
@@ -70,7 +57,7 @@
         },
         "batching": {}
       },
-      "id": "0fdc7628-402c-48f8-b9dd-56922e9b248a",
+      "id": "5cf39ac9-271d-4993-aacb-5604c6dd4fe2",
       "name": "Content creator",
       "type": "@n8n/n8n-nodes-langchain.chainLlm",
       "position": [
@@ -88,7 +75,7 @@
         },
         "options": {}
       },
-      "id": "3468ce0f-6786-4bb6-ae06-ff012bda782d",
+      "id": "12a4fc6a-5d23-4f54-88c4-4d56731e457c",
       "name": "OpenAI Chat Model1",
       "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
       "position": [
@@ -107,7 +94,7 @@
       "parameters": {
         "jsonSchemaExample": "{\n  \"post title\": \"Exciting New Feature Launch 🚀\",\n  \"post content\": \"After months of collaboration, testing, and fine-tuning, we're thrilled to introduce our latest product feature: Smart Insights. It helps users uncover meaningful patterns in their data with just a few clicks. This wouldn't have been possible without our incredible team and supportive community. We're excited for what's next — and we'd love your feedback!\",\n  \"image description\": \"A laptop screen showcasing the new Smart Insights dashboard with colorful charts and graphs, surrounded by a team clapping in the background.\"\n}"
       },
-      "id": "2ace5d48-23f8-4dcf-9d0e-6662f4384a59",
+      "id": "e3babda4-1380-4089-bda0-89a182b10435",
       "name": "Structured Output Parser1",
       "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
       "position": [
@@ -123,7 +110,7 @@
         "hasOutputParser": true,
         "options": {}
       },
-      "id": "334d1c3e-9682-4b17-b899-8fc1934f1803",
+      "id": "5efac608-f0f3-4d90-b8b2-82cf0e07ffba",
       "name": "Hashtag generator /SEO",
       "type": "@n8n/n8n-nodes-langchain.agent",
       "position": [
@@ -141,7 +128,7 @@
         },
         "options": {}
       },
-      "id": "2422ff92-4e84-419c-abfc-701f035b5a08",
+      "id": "1cb0e8d6-921b-4229-8f4f-cf1f4b47b0a7",
       "name": "OpenAI Chat Model2",
       "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
       "position": [
@@ -160,7 +147,7 @@
       "parameters": {
         "jsonSchemaExample": "{\n  \"post title\": \"Exciting New Feature Launch 🚀\",\n  \"post content\": \"After months of collaboration, testing, and fine-tuning, we're thrilled to introduce our latest product feature: Smart Insights. It helps users uncover meaningful patterns in their data with just a few clicks. This wouldn't have been possible without our incredible team and supportive community. We're excited for what's next — and we'd love your feedback!\",\n  \"image description\": \"A laptop screen showcasing the new Smart Insights dashboard with colorful charts and graphs, surrounded by a team clapping in the background.\",\n\"Hashtags\":[\"#AI\",\"#Automation\"]\n}"
       },
-      "id": "68abd0d0-7462-45c9-8269-76ebed0735c7",
+      "id": "2722b2b0-bd79-45d2-a081-488ec3dffe23",
       "name": "Structured Output Parser2",
       "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
       "position": [
@@ -175,7 +162,7 @@
         "combineBy": "combineByPosition",
         "options": {}
       },
-      "id": "fe132716-b5fc-41c6-afb4-d44e00a5e23c",
+      "id": "d0570165-508a-4503-8c01-8d858635e2f8",
       "name": "Merge",
       "type": "n8n-nodes-base.merge",
       "position": [
@@ -187,13 +174,14 @@
     {
       "parameters": {
         "person": "YXxvnEJtN2",
-        "text": "=\n\n",
+        "text": "={{ $json.output['post content'] }}\n\n{{ $json.output.Hashtags[0] }}\n{{ $json.output.Hashtags[1] }}\n{{ $json.output.Hashtags[3] }}\n\n\n",
         "shareMediaCategory": "IMAGE",
         "additionalFields": {
+          "title": "={{ $json.output['post title'] }}",
           "visibility": "PUBLIC"
         }
       },
-      "id": "545688b9-6b00-41cc-a6d6-71d2b97f7777",
+      "id": "bf6543ad-648d-4144-9cfd-06290457ff1a",
       "name": "LinkedIn",
       "type": "n8n-nodes-base.linkedIn",
       "position": [
@@ -222,10 +210,10 @@
       "type": "n8n-nodes-base.rssFeedReadTrigger",
       "typeVersion": 1,
       "position": [
-        416,
-        240
+        160,
+        480
       ],
-      "id": "853d84b7-c9e8-480e-83a5-fc12223edf2c",
+      "id": "1406dfdd-25e7-438b-9326-99387fee54b2",
       "name": "RSS Feed Trigger"
     },
     {
@@ -246,13 +234,61 @@
         1664,
         192
       ],
-      "id": "43cba631-ce9a-4968-9e0e-8370a25168a2",
+      "id": "a7e581ed-2db8-46fc-bd1e-fec4657b9133",
       "name": "Generate an image",
       "notesInFlow": false,
       "credentials": {
         "googlePalmApi": {
           "id": "Fz7gDkwnKZH1uWEi",
           "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsonSchemaExample": "[{\n \"title\": \"AI as Your First Content Hire: Why Founders Shouldn't Wait to Outsource Creation\",\n            \"rationale\": \"Most solopreneurs delay content scaling because they think hiring a ghostwriter is the next step — but AI can handle 80% with proper systems. This shifts content from a creative bottleneck to a scalable growth lever.\",\n            \"hook\": \"Ghostwriters are outdated. Train GPT once, and it ships LinkedIn gold in your voice daily. Welcome to hands-free thought leadership.\"\n          }]"
+      },
+      "id": "80151eb2-6880-4d7e-bb48-75f17e8586ba",
+      "name": "Structured Output Parser",
+      "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
+      "position": [
+        960,
+        448
+      ],
+      "typeVersion": 1.2
+    },
+    {
+      "parameters": {
+        "tableId": "n8nmemory",
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldId": "recipient",
+              "fieldValue": "={{ $('RSS Feed Trigger').item.json.creator }}"
+            },
+            {
+              "fieldId": "message",
+              "fieldValue": "={{ $('RSS Feed Trigger').item.json.content }}"
+            },
+            {
+              "fieldId": "sender",
+              "fieldValue": "={{ $('RSS Feed Trigger').item.json.guid }}"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabaseTool",
+      "typeVersion": 1,
+      "position": [
+        816,
+        528
+      ],
+      "id": "291cbaec-364f-4d24-adff-764e9b340c0f",
+      "name": "Create a row in Supabase",
+      "credentials": {
+        "supabaseApi": {
+          "id": "lQpl5LzBMtQDN2z5",
+          "name": "Supabase account 2"
         }
       }
     }
@@ -341,17 +377,6 @@
         ]
       ]
     },
-    "Structured Output Parser": {
-      "ai_outputParser": [
-        [
-          {
-            "node": "Content topic generator2",
-            "type": "ai_outputParser",
-            "index": 0
-          }
-        ]
-      ]
-    },
     "Structured Output Parser1": {
       "ai_outputParser": [
         [
@@ -395,16 +420,38 @@
           }
         ]
       ]
+    },
+    "Structured Output Parser": {
+      "ai_outputParser": [
+        [
+          {
+            "node": "Content topic generator2",
+            "type": "ai_outputParser",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create a row in Supabase": {
+      "ai_tool": [
+        [
+          {
+            "node": "Content topic generator2",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
     }
   },
   "active": false,
   "settings": {},
-  "versionId": "87245e8c-9b20-4141-b2bb-257a964bb7fe",
+  "versionId": "c743f5ee-8821-46fd-ae31-aa7ed0faae09",
   "meta": {
     "templateId": "4968",
     "templateCredsSetupCompleted": true,
     "instanceId": "fab9955a35c72b3658e9cc7074f48b8378bf528f593bdaf1bc3e7be06326eb75"
   },
-  "id": "yMgCVfOKAStSjZty",
+  "id": "DjjscQQfrljJOKvf",
   "tags": []
 }
