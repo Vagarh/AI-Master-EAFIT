@@ -1,6 +1,36 @@
-# Agente de Análisis de Proteínas
+# 🔬 Agente de Análisis de Proteínas
 
-Una aplicación web interactiva construida con Streamlit que combina Análisis Exploratorio de Datos (EDA) con un agente de IA conversacional para analizar datasets de secuencias de proteínas.
+Una aplicación web interactiva construida con Streamlit que combina **Análisis Exploratorio de Datos (EDA)** con un **agente de IA conversacional** para analizar datasets de secuencias de proteínas de manera inteligente y automatizada.
+
+![Python](https://img.shields.io/badge/Python-3.8+-blue.svg)
+![Streamlit](https://img.shields.io/badge/Streamlit-1.28+-red.svg)
+![License](https://img.shields.io/badge/License-MIT-green.svg)
+
+## 🎯 Características Principales
+
+### 🤖 **Agente de IA Conversacional**
+- Basado en **DeepSeek-R1** para respuestas contextualizadas
+- Integración con herramientas bioinformáticas (BLAST, PDB)
+- Memoria de conversación para preguntas de seguimiento
+- Análisis automático de datos cargados
+
+### 📊 **Dashboard Interactivo**
+- Visualizaciones automáticas de distribuciones
+- Filtros dinámicos para exploración de subconjuntos
+- Métricas en tiempo real con deltas comparativos
+- Análisis de calidad estructural
+
+### 🔍 **Insights Automáticos**
+- Detección automática de patrones en los datos
+- Recomendaciones basadas en el análisis
+- Analytics de uso de la aplicación
+- Reportes de calidad de datos
+
+### 📋 **Generación de Reportes**
+- Exportación automática a PDF
+- Envío por correo electrónico
+- Incluye gráficos y estadísticas completas
+- Timestamping automático
 
 ## 📜 Descripción
 

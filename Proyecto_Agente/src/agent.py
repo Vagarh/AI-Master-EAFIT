@@ -3,14 +3,21 @@ import json
 from litellm import completion
 from tools import run_blast_search, fetch_pdb_data
 from context_builder import build_messages
+from logger import app_logger, log_agent_response, log_error
+from config import MODEL_CONFIG
 
 class ProteinAnalysisAgent:
     def __init__(self, api_key=None):
-        self.api_key = api_key
+        self.api_key = api_key or os.getenv(MODEL_CONFIG["api_key_env"])
+        self.model_name = MODEL_CONFIG["model_name"]
+        
         if not self.api_key:
-            self.api_key = os.getenv("HUGGING_FACE_API_KEY")
-        if not self.api_key:
-            raise ValueError("API key for Hugging Face not found. Please set the HUGGING_FACE_API_KEY environment variable.")
+            raise ValueError(
+                f"API key for Hugging Face not found. "
+                f"Please set the {MODEL_CONFIG['api_key_env']} environment variable."
+            )
+        
+        app_logger.info(f"ProteinAnalysisAgent initialized with model: {self.model_name}")
 
     def chat(self, context: str, user_question: str, chat_history: list = None):
         """
@@ -68,14 +75,20 @@ class ProteinAnalysisAgent:
             chat_history=chat_history
         )
         
+        tools_used = []
+        
         try:
+            app_logger.debug(f"Processing question: {user_question[:100]}...")
+            
             # 3. Primera llamada: El LLM decide si usa una herramienta
             response = completion(
-                model="huggingface/together/deepseek-ai/DeepSeek-R1",
+                model=self.model_name,
                 messages=messages,
                 tools=tools,
                 tool_choice="auto",
-                api_key=self.api_key
+                api_key=self.api_key,
+                max_tokens=MODEL_CONFIG.get("max_tokens", 4000),
+                temperature=MODEL_CONFIG.get("temperature", 0.1)
             )
 
             response_message = response.choices[0].message
@@ -85,26 +98,64 @@ class ProteinAnalysisAgent:
                 tool_call = response_message.tool_calls[0]
                 function_name = tool_call.function.name
                 function_args = json.loads(tool_call.function.arguments)
+                
+                app_logger.info(f"Agent using tool: {function_name} with args: {function_args}")
+                tools_used.append(function_name)
 
-                if function_name == "run_blast_search":
-                    tool_result = run_blast_search(
-                        sequence=function_args.get("sequence"),
-                        top_n=function_args.get("top_n", 3)
+                try:
+                    if function_name == "run_blast_search":
+                        tool_result = run_blast_search(
+                            sequence=function_args.get("sequence"),
+                            top_n=function_args.get("top_n", 3)
+                        )
+                        messages.append(response_message)
+                        messages.append({
+                            "role": "tool", 
+                            "tool_call_id": tool_call.id, 
+                            "name": function_name, 
+                            "content": tool_result
+                        })
+                        
+                    elif function_name == "fetch_pdb_data":
+                        tool_result = fetch_pdb_data(
+                            pdb_id=function_args.get("pdb_id")
+                        )
+                        messages.append(response_message)
+                        messages.append({
+                            "role": "tool", 
+                            "tool_call_id": tool_call.id, 
+                            "name": function_name, 
+                            "content": tool_result
+                        })
+                        
+                    else:
+                        error_msg = f"Error: El modelo intentó llamar a una herramienta desconocida: {function_name}"
+                        app_logger.error(error_msg)
+                        return error_msg
+                    
+                    # Segunda llamada para procesar el resultado de la herramienta
+                    final_response = completion(
+                        model=self.model_name, 
+                        messages=messages, 
+                        api_key=self.api_key,
+                        max_tokens=MODEL_CONFIG.get("max_tokens", 4000),
+                        temperature=MODEL_CONFIG.get("temperature", 0.1)
                     )
-                    messages.append(response_message)
-                elif function_name == "fetch_pdb_data":
-                    tool_result = fetch_pdb_data(
-                        pdb_id=function_args.get("pdb_id")
-                    )
-                    messages.append(response_message)
-                    messages.append({"role": "tool", "tool_call_id": tool_call.id, "name": function_name, "content": tool_result})
-                    final_response = completion(model="huggingface/together/deepseek-ai/DeepSeek-R1", messages=messages, api_key=self.api_key)
-                    return final_response.choices[0].message.content
-                else:
-                    return f"Error: El modelo intentó llamar a una herramienta desconocida: {function_name}"
+                    final_content = final_response.choices[0].message.content
+                    
+                    # Log de la respuesta
+                    log_agent_response(user_question, len(final_content), tools_used)
+                    return final_content
+                    
+                except Exception as tool_error:
+                    log_error(tool_error, f"tool_execution_{function_name}")
+                    return f"Error al ejecutar la herramienta {function_name}: {str(tool_error)}"
 
             # Si no se usó ninguna herramienta, devolver la respuesta directa
-            return response_message.content
+            final_content = response_message.content
+            log_agent_response(user_question, len(final_content), tools_used)
+            return final_content
 
         except Exception as e:
-            return f"Error al procesar la solicitud con el agente: {e}"
+            log_error(e, "agent_chat")
+            return f"Error al procesar la solicitud con el agente: {str(e)}"
