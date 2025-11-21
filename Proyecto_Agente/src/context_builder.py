@@ -1,51 +1,92 @@
-from typing import List, Dict
+"""
+Constructor de contexto para conversaciones con el agente de IA.
+
+Este módulo proporciona funcionalidades para construir mensajes estructurados
+que incluyen el contexto del análisis de datos, el historial de conversación
+y las instrucciones del sistema para el modelo de lenguaje.
+
+Author: Juan Felipe Cardona
+Date: 2024
+"""
+
+from typing import List, Dict, Optional
+
 
 def build_messages(
     eda_context: str,
     user_question: str,
-    chat_history: List[Dict[str, str]] = None
+    chat_history: Optional[List[Dict[str, str]]] = None
 ) -> List[Dict[str, str]]:
     """
-    Construye la lista de mensajes para el LLM siguiendo un protocolo estructurado.
+    Construye la lista de mensajes estructurados para el LLM siguiendo un protocolo consistente.
 
-    Este "protocolo" asegura que el agente siempre reciba un contexto consistente
-    que incluye su persona (rol del sistema), el historial de la conversación,
-    el contexto de los datos (EDA) y la pregunta actual del usuario.
+    Este protocolo asegura que el agente siempre reciba:
+    1. Un rol del sistema claro (system prompt)
+    2. El historial completo de la conversación
+    3. El contexto del EDA actual
+    4. La pregunta del usuario
 
     Args:
-        eda_context: Un string con el resumen del Análisis Exploratorio de Datos.
-        user_question: La pregunta actual del usuario.
-        chat_history: Una lista de mensajes anteriores en la conversación.
+        eda_context (str): Resumen del Análisis Exploratorio de Datos (estadísticas,
+                          información del dataset, etc.)
+        user_question (str): Pregunta o mensaje actual del usuario
+        chat_history (List[Dict], optional): Lista de mensajes anteriores en el formato
+                                            [{"role": "user/assistant", "content": "..."}]
 
     Returns:
-        Una lista de diccionarios, cada uno representando un mensaje en el formato
-        que espera la API del LLM.
+        List[Dict[str, str]]: Lista de mensajes formateados para la API del LLM,
+                             listos para ser enviados en la solicitud
+
+    Example:
+        >>> messages = build_messages(
+        ...     eda_context="Dataset con 1000 secuencias...",
+        ...     user_question="¿Cuál es la secuencia más larga?",
+        ...     chat_history=[]
+        ... )
     """
+    # Inicializar historial si no se proporciona
     chat_history = chat_history or []
 
+    # ============================================================
+    # Definir el rol del sistema (System Prompt)
+    # ============================================================
     system_prompt = (
         "Eres un experto en biología molecular y análisis de datos de proteínas. "
         "Tu rol es actuar como un asistente inteligente para un científico de datos. "
         "Se te proporcionará un contexto sobre un dataset de proteínas y tienes acceso a herramientas bioinformáticas. "
-        "Si la pregunta del usuario puede ser respondida con el contexto del EDA, úsalo. "
-        "Si la pregunta requiere información externa sobre una secuencia (ej. '¿a qué se parece esta proteína?'), DEBES usar la herramienta 'run_blast_search'. "
-        "Si el usuario pregunta por detalles de una estructura específica usando un ID de 4 caracteres (ej. 'dame información sobre 2HHB'), DEBES usar la herramienta 'fetch_pdb_data'. "
-        "Responde de manera clara, concisa y fundamentada en los datos o en los resultados de las herramientas. "
-        "Mantén la memoria de la conversación para responder preguntas de seguimiento."
+        "\n\n"
+        "INSTRUCCIONES DE USO DE HERRAMIENTAS:\n"
+        "- Si la pregunta puede responderse con el contexto del EDA, úsalo directamente.\n"
+        "- Si la pregunta requiere información externa sobre una secuencia "
+        "(ej. '¿a qué se parece esta proteína?'), DEBES usar la herramienta 'run_blast_search'.\n"
+        "- Si el usuario pregunta por detalles de una estructura específica usando un ID de 4 caracteres "
+        "(ej. 'dame información sobre 2HHB'), DEBES usar la herramienta 'fetch_pdb_data'.\n"
+        "\n"
+        "ESTILO DE RESPUESTA:\n"
+        "- Responde de manera clara, concisa y fundamentada en los datos o en los resultados de las herramientas.\n"
+        "- Mantén la memoria de la conversación para responder preguntas de seguimiento.\n"
+        "- Usa terminología científica apropiada pero accesible."
     )
-    
-    # 1. Empezar con el rol del sistema
+
+    # ============================================================
+    # PASO 1: Iniciar con el mensaje del sistema
+    # ============================================================
     messages = [{"role": "system", "content": system_prompt}]
 
-    # 2. Añadir el historial de la conversación para darle memoria al agente
+    # ============================================================
+    # PASO 2: Añadir historial de conversación
+    # ============================================================
+    # Esto permite al agente mantener contexto de intercambios anteriores
     messages.extend(chat_history)
 
-    # 3. Construir y añadir el prompt del usuario actual, que incluye el contexto del EDA
+    # ============================================================
+    # PASO 3: Construir el mensaje del usuario con contexto EDA
+    # ============================================================
     human_prompt = (
         f"Contexto del EDA (solo para tu referencia, no lo menciones a menos que sea relevante para la pregunta):\n"
         f"--- CONTEXTO ---\n{eda_context}\n--- FIN DEL CONTEXTO ---\n\n"
         f"Pregunta del usuario: {user_question}"
     )
     messages.append({"role": "user", "content": human_prompt})
-    
+
     return messages
