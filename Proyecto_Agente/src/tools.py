@@ -12,6 +12,7 @@ Date: 2024
 import io
 from typing import Optional
 import requests
+import re
 from Bio.Blast import NCBIWWW, NCBIXML
 
 
@@ -45,6 +46,10 @@ def run_blast_search(sequence: str, top_n: int = 3) -> str:
     # ============================================================
     if not sequence or not isinstance(sequence, str) or len(sequence) < 10:
         return "Error: Se necesita una secuencia de proteína válida (mínimo 10 aminoácidos) para la búsqueda BLAST."
+
+    # Validar que la secuencia solo contenga letras (A-Z, a-z)
+    if not re.match("^[A-Za-z]+$", sequence):
+        return "Error: La secuencia contiene caracteres inválidos. Solo se permiten letras (A-Z, a-z)."
 
     try:
         # ============================================================
@@ -130,6 +135,10 @@ def fetch_pdb_data(pdb_id: str) -> str:
     # ============================================================
     if not pdb_id or not isinstance(pdb_id, str) or len(pdb_id) != 4:
         return "Error: Se requiere un ID de PDB válido de 4 caracteres."
+
+    # Validar que el ID solo contenga caracteres alfanuméricos
+    if not re.match("^[A-Za-z0-9]{4}$", pdb_id):
+        return "Error: El ID de PDB contiene caracteres inválidos. Solo se permiten letras y números."
 
     # ============================================================
     # Consultar API de RCSB PDB
