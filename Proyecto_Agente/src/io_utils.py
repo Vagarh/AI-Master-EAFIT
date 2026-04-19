@@ -13,6 +13,24 @@ import csv
 from typing import Optional
 
 
+# Límite de tamaño de archivo (25 MB)
+MAX_FILE_SIZE = 25 * 1024 * 1024
+
+
+def get_file_size(file) -> int:
+    """Obtiene el tamaño del archivo en bytes."""
+    if hasattr(file, "size"):
+        # Objetos de Streamlit (UploadedFile)
+        return file.size
+
+    # Objetos file-like estándar (buscando hasta el final)
+    current_pos = file.tell()
+    file.seek(0, 2)  # Mover al final
+    size = file.tell()
+    file.seek(current_pos)  # Restaurar posición original
+    return size
+
+
 def read_any(file) -> Optional[pd.DataFrame]:
     """
     Lee archivos de datos en múltiples formatos (CSV, XLS, XLSX) con detección automática.
@@ -38,20 +56,36 @@ def read_any(file) -> Optional[pd.DataFrame]:
     if file is None:
         return None
 
-    # Obtener nombre del archivo en minúsculas para comparación
+    # Validación de seguridad: Validar extensiones de archivo permitidas
     name = file.name.lower()
+    allowed_extensions = [".csv", ".xls", ".xlsx"]
+    if not any(name.endswith(ext) for ext in allowed_extensions):
+        raise ValueError("Error de seguridad: Extensión de archivo no permitida. Solo se aceptan .csv, .xls, .xlsx")
+
+    # Validación de seguridad: Prevenir DoS por archivos enormes
+    file_size = get_file_size(file)
+    if file_size > MAX_FILE_SIZE:
+        raise ValueError(f"Error de seguridad: El archivo excede el tamaño máximo permitido de 25MB.")
 
     # ============================================================
     # Procesamiento de archivos CSV
     # ============================================================
     if name.endswith(".csv"):
         try:
+            # Validación de seguridad: Check por bytes nulos (indicador de archivo binario camuflado)
+            raw_bytes = file.read(4096)
+            if b'\x00' in raw_bytes:
+                 raise ValueError("Error de seguridad: Se detectaron bytes nulos en el archivo CSV. Posible archivo binario malicioso.")
+
             # Leer una muestra del archivo para detectar el delimitador
             # Esto es útil para manejar tanto CSV separados por coma como por punto y coma
-            raw = file.read(4096).decode(errors="ignore")
+            raw = raw_bytes.decode(errors="ignore")
             dialect = csv.Sniffer().sniff(raw)
             delim = dialect.delimiter
 
+        except ValueError as ve:
+            # Re-lanzar excepciones de seguridad
+            raise ve
         except Exception:
             # Si falla la detección, usar coma por defecto
             delim = ","
