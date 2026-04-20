@@ -149,7 +149,8 @@ def fetch_pdb_data(pdb_id: str) -> str:
 
     try:
         # Realizar petición GET a la API
-        response = requests.get(url)
+        # Validación de seguridad: Timeout explícito para evitar bloqueos
+        response = requests.get(url, timeout=10)
 
         # Verificar si el PDB ID existe
         if response.status_code == 404:

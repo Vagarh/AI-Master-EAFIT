@@ -154,9 +154,14 @@ def create_download_link(data: bytes, filename: str, mime_type: str, label: str)
         HTML del enlace de descarga
     """
     import base64
+    import html
+
+    # Sanitizar entradas de usuario para prevenir XSS
+    safe_filename = html.escape(filename, quote=True)
+    safe_label = html.escape(label, quote=True)
     
     b64 = base64.b64encode(data).decode()
-    href = f'<a href="data:{mime_type};base64,{b64}" download="{filename}">{label}</a>'
+    href = f'<a href="data:{mime_type};base64,{b64}" download="{safe_filename}">{safe_label}</a>'
     return href
 
 def safe_divide(numerator: float, denominator: float, default: float = 0.0) -> float:

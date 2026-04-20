@@ -1,5 +1,6 @@
 import os
 import smtplib
+import re
 from email.message import EmailMessage
 
 def send_email(to_addr, subject, body, attachment_data=None, attachment_filename=None, attachment_mimetype=None):
@@ -19,6 +20,11 @@ def send_email(to_addr, subject, body, attachment_data=None, attachment_filename
 
     if not to_addr:
         return False, "No se ha proporcionado una dirección de correo de destino."
+
+    # Validación de seguridad: Validar formato de email para prevenir Header Injection y abuso
+    email_regex = re.compile(r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$')
+    if not email_regex.match(to_addr):
+        return False, "Error de seguridad: La dirección de correo electrónico proporcionada no es válida."
 
     try:
         port = int(port_str)
