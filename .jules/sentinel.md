@@ -13,3 +13,8 @@
 **Vulnerability:** Found missing email format validation, a missing timeout on external API requests (DoS risk), and unsanitized parameters in an HTML anchor tag generation (XSS risk).
 **Learning:** In applications using the Streamlit framework, helper functions that return HTML (like `create_download_link`) or interface with external resources must include proper sanitization (e.g. `html.escape`) and explicit configurations (e.g., `timeout=10` in `requests`). Furthermore, email wrappers need strict format checks to prevent injection attacks.
 **Prevention:** Apply input sanitization when injecting variables into HTML strings, set timeouts on all network calls, and utilize RegEx for validating structured data like email addresses.
+
+## 2026-04-24 - [Secure Subprocess Execution]
+**Vulnerability:** The `run_command` utility in `Proyecto_Agente/setup.py` used `subprocess.run(..., shell=True)` which is a major command injection risk if arguments ever become unsanitized, and an anti-pattern.
+**Learning:** Helper scripts often wrap `subprocess` with `shell=True` for convenience when passing string commands. When moving to `shell=False`, legacy string inputs must be split. `shlex.split()` safely converts these string commands to the required list format without breaking existing code.
+**Prevention:** Default to `shell=False` for all `subprocess.run` calls, use list arguments, and prefer `sys.executable -m pip` to invoke module execution safely and reliably.
