@@ -6,7 +6,7 @@ from src.agent import ProteinAnalysisAgent
 
 class TestProteinAnalysisAgent(unittest.TestCase):
 
-    @patch.dict(os.environ, {"GEMINI_API_KEY": "test_key"})
+    @patch.dict(os.environ, {"HUGGING_FACE_API_KEY": "test_key"})
     def test_init_success(self):
         """
         Prueba que el agente se inicializa correctamente cuando la API key existe.
@@ -25,9 +25,9 @@ class TestProteinAnalysisAgent(unittest.TestCase):
         """
         with self.assertRaises(ValueError) as context:
             ProteinAnalysisAgent()
-        self.assertIn("API key for Gemini not found", str(context.exception))
+        self.assertIn("API key for Hugging Face not found", str(context.exception))
 
-    @patch.dict(os.environ, {"GEMINI_API_KEY": "test_key"})
+    @patch.dict(os.environ, {"HUGGING_FACE_API_KEY": "test_key"})
     @patch("src.agent.completion")
     def test_chat_success(self, mock_completion):
         """
@@ -35,6 +35,7 @@ class TestProteinAnalysisAgent(unittest.TestCase):
         """
         # Configurar el mock para simular una respuesta exitosa de la API
         mock_response = MagicMock()
+        mock_response.choices[0].message.tool_calls = None
         mock_response.choices[0].message.content = "Respuesta simulada de la IA"
         mock_completion.return_value = mock_response
 
@@ -50,7 +51,7 @@ class TestProteinAnalysisAgent(unittest.TestCase):
         # Verificar que la función de completion fue llamada con los argumentos correctos
         mock_completion.assert_called_once()
         args, kwargs = mock_completion.call_args
-        self.assertEqual(kwargs['model'], "gemini/gemini-pro")
+        self.assertEqual(kwargs['model'], "huggingface/together/deepseek-ai/DeepSeek-R1")
         self.assertEqual(kwargs['api_key'], "test_key")
         
         messages = kwargs['messages']
@@ -61,7 +62,7 @@ class TestProteinAnalysisAgent(unittest.TestCase):
         self.assertIn(context, messages[1]['content'])
         self.assertIn(user_question, messages[1]['content'])
 
-    @patch.dict(os.environ, {"GEMINI_API_KEY": "test_key"})
+    @patch.dict(os.environ, {"HUGGING_FACE_API_KEY": "test_key"})
     @patch("src.agent.completion")
     def test_chat_api_error(self, mock_completion):
         """
@@ -77,7 +78,7 @@ class TestProteinAnalysisAgent(unittest.TestCase):
         response = agent.chat(context, user_question)
 
         # Verificar que la respuesta contiene el mensaje de error esperado
-        self.assertIn("Error al contactar el modelo de lenguaje: Error de red simulado", response)
+        self.assertIn("Error al procesar la solicitud con el agente: Error de red simulado", response)
 
 if __name__ == "__main__":
     unittest.main()

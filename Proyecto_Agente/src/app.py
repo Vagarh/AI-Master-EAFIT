@@ -126,14 +126,23 @@ if data_choice == "Subir un archivo":
         accept_multiple_files=False
     )
     if file:
-        st.session_state.df = read_any(file)
-        if st.session_state.df is not None:
-            st.success(f"Dataset cargado: {st.session_state.df.shape[0]} filas x {st.session_state.df.shape[1]} columnas")
-            analytics_tracker.track_event("dataset_loaded", {
-                "filename": file.name,
-                "rows": st.session_state.df.shape[0],
-                "columns": st.session_state.df.shape[1]
-            })
+        try:
+            st.session_state.df = read_any(file)
+            if st.session_state.df is not None:
+                st.success(f"Dataset cargado: {st.session_state.df.shape[0]} filas x {st.session_state.df.shape[1]} columnas")
+                analytics_tracker.track_event("dataset_loaded", {
+                    "filename": file.name,
+                    "rows": st.session_state.df.shape[0],
+                    "columns": st.session_state.df.shape[1]
+                })
+        except ValueError as e:
+            st.session_state.df = None
+            st.error(str(e))
+            app_logger.warning(f"Error de validación al cargar archivo: {str(e)}")
+        except Exception as e:
+            st.session_state.df = None
+            st.error("Ocurrió un error inesperado al procesar el archivo. Por favor, verifique el formato y vuelva a intentarlo.")
+            app_logger.error(f"Error inesperado al cargar archivo {file.name}: {str(e)}")
     else:
         # Clear dataframe if no file is uploaded in this mode
         st.session_state.df = None
