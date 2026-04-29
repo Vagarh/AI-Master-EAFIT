@@ -126,14 +126,21 @@ if data_choice == "Subir un archivo":
         accept_multiple_files=False
     )
     if file:
-        st.session_state.df = read_any(file)
-        if st.session_state.df is not None:
-            st.success(f"Dataset cargado: {st.session_state.df.shape[0]} filas x {st.session_state.df.shape[1]} columnas")
-            analytics_tracker.track_event("dataset_loaded", {
-                "filename": file.name,
-                "rows": st.session_state.df.shape[0],
-                "columns": st.session_state.df.shape[1]
-            })
+        try:
+            st.session_state.df = read_any(file)
+            if st.session_state.df is not None:
+                st.success(f"Dataset cargado: {st.session_state.df.shape[0]} filas x {st.session_state.df.shape[1]} columnas")
+                analytics_tracker.track_event("dataset_loaded", {
+                    "filename": file.name,
+                    "rows": st.session_state.df.shape[0],
+                    "columns": st.session_state.df.shape[1]
+                })
+        except ValueError as ve:
+            st.error(str(ve))
+            st.session_state.df = None
+        except Exception:
+            st.error("Ocurrió un error inesperado al procesar el archivo.")
+            st.session_state.df = None
     else:
         # Clear dataframe if no file is uploaded in this mode
         st.session_state.df = None
