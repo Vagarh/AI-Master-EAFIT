@@ -18,3 +18,7 @@
 **Vulnerability:** The `run_command` utility in `Proyecto_Agente/setup.py` used `subprocess.run(..., shell=True)` which is a major command injection risk if arguments ever become unsanitized, and an anti-pattern.
 **Learning:** Helper scripts often wrap `subprocess` with `shell=True` for convenience when passing string commands. When moving to `shell=False`, legacy string inputs must be split. `shlex.split()` safely converts these string commands to the required list format without breaking existing code.
 **Prevention:** Default to `shell=False` for all `subprocess.run` calls, use list arguments, and prefer `sys.executable -m pip` to invoke module execution safely and reliably.
+## 2024-05-18 - Exception handling in Streamlit
+**Vulnerability:** Uncaught exceptions when uploading files in Streamlit leak internal paths and stack traces to users.
+**Learning:** Streamlit does not automatically mask uncaught exceptions from user interfaces. File parsing/upload tools that intentionally raise security errors must be wrapped in try/except blocks at the UI layer.
+**Prevention:** Always wrap user file processing and I/O operations in try/except blocks and handle errors gracefully using st.error() with generalized messages.
