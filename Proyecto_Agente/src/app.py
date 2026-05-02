@@ -151,11 +151,18 @@ else:  # "Usar datos de ejemplo"
         st.info(
             f"Se cargará el dataset de ejemplo '{EXAMPLE_FILENAME}'. Puedes encontrar este archivo en el repositorio del proyecto."
         )
-        st.session_state.df = pd.read_csv(EXAMPLE_FILE_PATH)
-        if st.session_state.df is not None:
-            st.success(
-                f"Dataset de ejemplo cargado: {st.session_state.df.shape[0]} filas x {st.session_state.df.shape[1]} columnas"
-            )
+        try:
+            st.session_state.df = pd.read_csv(EXAMPLE_FILE_PATH)
+            if st.session_state.df is not None:
+                st.success(
+                    f"Dataset de ejemplo cargado: {st.session_state.df.shape[0]} filas x {st.session_state.df.shape[1]} columnas"
+                )
+        except pd.errors.ParserError:
+            st.error("Error al procesar el archivo de ejemplo: El formato no es válido o está corrupto.")
+            st.session_state.df = None
+        except Exception:
+            st.error("Ocurrió un error inesperado al cargar el dataset de ejemplo.")
+            st.session_state.df = None
     else:
         st.error(f"No se encontró el archivo de ejemplo. Se esperaba en: {EXAMPLE_FILE_PATH}")
         st.session_state.df = None
