@@ -22,3 +22,7 @@
 **Vulnerability:** Uncaught exceptions when uploading files in Streamlit leak internal paths and stack traces to users.
 **Learning:** Streamlit does not automatically mask uncaught exceptions from user interfaces. File parsing/upload tools that intentionally raise security errors must be wrapped in try/except blocks at the UI layer.
 **Prevention:** Always wrap user file processing and I/O operations in try/except blocks and handle errors gracefully using st.error() with generalized messages.
+## 2024-05-15 - Unhandled Exceptions Leaking Stack Traces in Streamlit UI
+**Vulnerability:** Unhandled exceptions (like `pd.errors.ParserError` from malformed CSV files) expose full Python stack traces directly in the Streamlit UI, potentially revealing internal paths, environment details, and implementation logic.
+**Learning:** Streamlit's default error handling displays stack traces for uncaught exceptions directly to the end user. This is a significant information disclosure risk, especially in public-facing applications.
+**Prevention:** All operations that can fail predictably (like file reading, external API calls, parsing) must be wrapped in `try...except` blocks. Specific exceptions should be caught and converted into safe, generic error messages using `st.error()` without exposing the underlying stack trace.
