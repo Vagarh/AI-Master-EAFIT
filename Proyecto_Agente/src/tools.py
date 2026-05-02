@@ -13,6 +13,7 @@ import io
 import re
 from typing import Optional
 import requests
+import re
 from Bio.Blast import NCBIWWW, NCBIXML
 
 
