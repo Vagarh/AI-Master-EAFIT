@@ -10,6 +10,7 @@ Date: 2024
 """
 
 import io
+import re
 from typing import Optional
 import requests
 import re
@@ -47,9 +48,10 @@ def run_blast_search(sequence: str, top_n: int = 3) -> str:
     if not sequence or not isinstance(sequence, str) or len(sequence) < 10:
         return "Error: Se necesita una secuencia de proteína válida (mínimo 10 aminoácidos) para la búsqueda BLAST."
 
-    # Validar que la secuencia solo contenga letras (A-Z, a-z)
-    if not re.match("^[A-Za-z]+$", sequence):
-        return "Error: La secuencia contiene caracteres inválidos. Solo se permiten letras (A-Z, a-z)."
+    # Validación de seguridad estricta para evitar Inyección en APIs externas
+    # Permitir letras (aminoácidos) y asterisco (codón de parada)
+    if not re.match(r'^[A-Za-z\*]+$', sequence):
+        return "Error: La secuencia contiene caracteres inválidos. Solo se permiten letras (A-Z) y asteriscos (*)."
 
     try:
         # ============================================================
@@ -136,9 +138,10 @@ def fetch_pdb_data(pdb_id: str) -> str:
     if not pdb_id or not isinstance(pdb_id, str) or len(pdb_id) != 4:
         return "Error: Se requiere un ID de PDB válido de 4 caracteres."
 
-    # Validar que el ID solo contenga caracteres alfanuméricos
-    if not re.match("^[A-Za-z0-9]{4}$", pdb_id):
-        return "Error: El ID de PDB contiene caracteres inválidos. Solo se permiten letras y números."
+    # Validación de seguridad estricta para evitar SSRF/Injection
+    # PDB IDs son estrictamente 4 caracteres (1 número + 3 alfanuméricos)
+    if not re.match(r'^[1-9][a-zA-Z0-9]{3}$', pdb_id):
+        return "Error: El ID de PDB contiene caracteres no válidos o no tiene el formato correcto."
 
     # ============================================================
     # Consultar API de RCSB PDB
@@ -147,7 +150,8 @@ def fetch_pdb_data(pdb_id: str) -> str:
 
     try:
         # Realizar petición GET a la API
-        response = requests.get(url)
+        # Validación de seguridad: Timeout explícito para evitar bloqueos
+        response = requests.get(url, timeout=10)
 
         # Verificar si el PDB ID existe
         if response.status_code == 404:

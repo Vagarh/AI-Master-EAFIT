@@ -126,14 +126,23 @@ if data_choice == "Subir un archivo":
         accept_multiple_files=False
     )
     if file:
-        st.session_state.df = read_any(file)
-        if st.session_state.df is not None:
-            st.success(f"Dataset cargado: {st.session_state.df.shape[0]} filas x {st.session_state.df.shape[1]} columnas")
-            analytics_tracker.track_event("dataset_loaded", {
-                "filename": file.name,
-                "rows": st.session_state.df.shape[0],
-                "columns": st.session_state.df.shape[1]
-            })
+        try:
+            st.session_state.df = read_any(file)
+            if st.session_state.df is not None:
+                st.success(f"Dataset cargado: {st.session_state.df.shape[0]} filas x {st.session_state.df.shape[1]} columnas")
+                analytics_tracker.track_event("dataset_loaded", {
+                    "filename": file.name,
+                    "rows": st.session_state.df.shape[0],
+                    "columns": st.session_state.df.shape[1]
+                })
+        except ValueError as e:
+            st.session_state.df = None
+            st.error(str(e))
+            app_logger.warning(f"Error de validación al cargar archivo: {str(e)}")
+        except Exception as e:
+            st.session_state.df = None
+            st.error("Ocurrió un error inesperado al procesar el archivo. Por favor, verifique el formato y vuelva a intentarlo.")
+            app_logger.error(f"Error inesperado al cargar archivo {file.name}: {str(e)}")
     else:
         # Clear dataframe if no file is uploaded in this mode
         st.session_state.df = None
@@ -142,11 +151,18 @@ else:  # "Usar datos de ejemplo"
         st.info(
             f"Se cargará el dataset de ejemplo '{EXAMPLE_FILENAME}'. Puedes encontrar este archivo en el repositorio del proyecto."
         )
-        st.session_state.df = pd.read_csv(EXAMPLE_FILE_PATH)
-        if st.session_state.df is not None:
-            st.success(
-                f"Dataset de ejemplo cargado: {st.session_state.df.shape[0]} filas x {st.session_state.df.shape[1]} columnas"
-            )
+        try:
+            st.session_state.df = pd.read_csv(EXAMPLE_FILE_PATH)
+            if st.session_state.df is not None:
+                st.success(
+                    f"Dataset de ejemplo cargado: {st.session_state.df.shape[0]} filas x {st.session_state.df.shape[1]} columnas"
+                )
+        except pd.errors.ParserError:
+            st.error("Error al procesar el archivo de ejemplo: El formato no es válido o está corrupto.")
+            st.session_state.df = None
+        except Exception:
+            st.error("Ocurrió un error inesperado al cargar el dataset de ejemplo.")
+            st.session_state.df = None
     else:
         st.error(f"No se encontró el archivo de ejemplo. Se esperaba en: {EXAMPLE_FILE_PATH}")
         st.session_state.df = None

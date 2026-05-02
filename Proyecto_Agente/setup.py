@@ -5,13 +5,16 @@ Script de configuración para el Agente de Análisis de Proteínas
 import os
 import sys
 import subprocess
+import shlex
 from pathlib import Path
 
 def run_command(command, description):
     """Ejecuta un comando y maneja errores"""
     print(f"🔄 {description}...")
+    if isinstance(command, str):
+        command = shlex.split(command)
     try:
-        result = subprocess.run(command, shell=True, check=True, capture_output=True, text=True)
+        result = subprocess.run(command, shell=False, check=True, capture_output=True, text=True)
         print(f"✅ {description} completado")
         return True
     except subprocess.CalledProcessError as e:
@@ -80,7 +83,7 @@ def main():
     create_env_file()
     
     # Instalar dependencias
-    if run_command("pip install -r ../requirements.txt", "Instalando dependencias"):
+    if run_command([sys.executable, "-m", "pip", "install", "-r", "../requirements.txt"], "Instalando dependencias"):
         print("✅ Todas las dependencias instaladas correctamente")
     else:
         print("❌ Error instalando dependencias")
