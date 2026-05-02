@@ -135,15 +135,14 @@ if data_choice == "Subir un archivo":
                     "rows": st.session_state.df.shape[0],
                     "columns": st.session_state.df.shape[1]
                 })
-        except ValueError as ve:
-            st.error(str(ve))
+        except ValueError as e:
             st.session_state.df = None
-        except pd.errors.ParserError:
-            st.error("Error al procesar el archivo: El formato no es válido o está corrupto.")
+            st.error(str(e))
+            app_logger.warning(f"Error de validación al cargar archivo: {str(e)}")
+        except Exception as e:
             st.session_state.df = None
-        except Exception:
-            st.error("Ocurrió un error inesperado al procesar el archivo.")
-            st.session_state.df = None
+            st.error("Ocurrió un error inesperado al procesar el archivo. Por favor, verifique el formato y vuelva a intentarlo.")
+            app_logger.error(f"Error inesperado al cargar archivo {file.name}: {str(e)}")
     else:
         # Clear dataframe if no file is uploaded in this mode
         st.session_state.df = None
