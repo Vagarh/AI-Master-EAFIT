@@ -69,7 +69,7 @@ with st.sidebar.expander("📚 Más información"):
         - **Reportes:** Descarga o envía por email un informe completo en PDF.
         - **Modelo LLM:** `deepseek-ai/DeepSeek-R1` (vía Hugging Face).
     """)
-email_to = st.sidebar.text_input("Enviar resultados a (opcional)")
+email_to = st.sidebar.text_input("Enviar resultados a (opcional)", max_chars=254)
 
 st.sidebar.markdown("---")
 
@@ -299,7 +299,7 @@ else:
                     if st.button("📊 Comparar con PDB 1A3N", use_container_width=True):
                         prompt = "Busca información del PDB ID '1A3N' y compárala con nuestro dataset."
 
-        if chat_input := st.chat_input("O escribe tu propia pregunta...", disabled=chat_disabled):
+        if chat_input := st.chat_input("O escribe tu propia pregunta...", max_chars=1000, disabled=chat_disabled):
             prompt = chat_input
 
         if prompt:
