@@ -239,4 +239,4 @@ class ProteinAnalysisAgent:
         except Exception as e:
             # Manejo de errores generales en el chat
             log_error(e, "agent_chat")
-            return f"Error al procesar la solicitud con el agente: {str(e)}"
+            return "Ocurrió un error al procesar la solicitud con el agente."
