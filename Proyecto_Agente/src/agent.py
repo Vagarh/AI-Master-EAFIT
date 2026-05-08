@@ -226,7 +226,7 @@ class ProteinAnalysisAgent:
                 except Exception as tool_error:
                     # Manejo de errores en la ejecución de herramientas
                     log_error(tool_error, f"tool_execution_{function_name}")
-                    return f"Error al ejecutar la herramienta {function_name}: {str(tool_error)}"
+                    return f"Ocurrió un error al ejecutar la herramienta {function_name}."
 
             # ============================================================
             # PASO 6: Respuesta directa (sin herramientas)
@@ -239,4 +239,4 @@ class ProteinAnalysisAgent:
         except Exception as e:
             # Manejo de errores generales en el chat
             log_error(e, "agent_chat")
-            return f"Error al procesar la solicitud con el agente: {str(e)}"
+            return "Ocurrió un error al procesar la solicitud con el agente. Por favor, intente nuevamente."

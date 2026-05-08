@@ -55,4 +55,4 @@ def send_email(to_addr, subject, body, attachment_data=None, attachment_filename
     except smtplib.SMTPConnectError:
         return False, f"No se pudo conectar al servidor SMTP en {host}:{port}. Revisa SMTP_HOST y SMTP_PORT."
     except Exception as e:
-        return False, f"Ocurrió un error inesperado al enviar el correo: {e}"
+        return False, "Ocurrió un error inesperado al enviar el correo."
