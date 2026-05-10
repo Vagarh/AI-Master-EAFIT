@@ -28,3 +28,8 @@
 **Vulnerability:** User input fields in the Streamlit application (`st.text_input` and `st.chat_input`) lacked length constraints. This could allow maliciously long inputs to cause Denial of Service (DoS) and exhaust resources, especially for LLM inference.
 **Learning:** UI frameworks like Streamlit do not impose default limits on input fields. We must explicitly define bounds like `max_chars` to protect the application backend.
 **Prevention:** Always set explicit `max_chars` limits on all Streamlit user input widgets (`st.text_input`, `st.text_area`, `st.chat_input`) to match expected data sizes.
+
+## 2024-05-20 - Prevent Information Leakage in Exception Handlers
+**Vulnerability:** Raw exception messages (`str(e)`) were being leaked to the LLM (in `tools.py`) and directly to the user UI (in `app.py`). This can expose sensitive internal path details, system configurations, or stack traces if exceptions aren't carefully managed.
+**Learning:** Returning or printing `str(e)` inside global error boundary equivalents or public API interfaces should be strictly avoided. Catch blocks often capture generic `Exception` base classes which contain unpredictable technical details.
+**Prevention:** Always log the actual raw exception (`str(e)`) securely (e.g., using `app_logger`) and return/render a predefined, static generic error message to external systems, agents, and users.
