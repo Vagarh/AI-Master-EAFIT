@@ -29,7 +29,7 @@ def send_email(to_addr, subject, body, attachment_data=None, attachment_filename
     try:
         port = int(port_str)
     except ValueError:
-        return False, f"El valor de SMTP_PORT ('{port_str}') no es un número válido."
+        return False, "Error de configuración: puerto SMTP inválido."
 
     # 2. Construir y enviar el correo
     msg = EmailMessage()
@@ -51,8 +51,8 @@ def send_email(to_addr, subject, body, attachment_data=None, attachment_filename
             s.send_message(msg)
         return True, "Correo enviado con éxito."
     except smtplib.SMTPAuthenticationError:
-        return False, "Fallo de autenticación. Revisa SMTP_USER y SMTP_PASS."
+        return False, "Fallo de autenticación en el servidor de correo."
     except smtplib.SMTPConnectError:
-        return False, f"No se pudo conectar al servidor SMTP en {host}:{port}. Revisa SMTP_HOST y SMTP_PORT."
+        return False, "No se pudo establecer conexión con el servidor de correo."
     except Exception as e:
         return False, "Ocurrió un error inesperado al enviar el correo."
