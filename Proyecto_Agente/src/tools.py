@@ -101,7 +101,7 @@ def run_blast_search(sequence: str, top_n: int = 3) -> str:
         return output.getvalue()
 
     except Exception as e:
-        return f"Error al realizar la búsqueda BLAST: {e}"
+        return f"Error al realizar la búsqueda BLAST. Por favor intente más tarde."
 
 def fetch_pdb_data(pdb_id: str) -> str:
     """
@@ -198,6 +198,6 @@ def fetch_pdb_data(pdb_id: str) -> str:
         return output
 
     except requests.exceptions.RequestException as e:
-        return f"Error de red al contactar la API de PDB: {e}"
+        return f"Error de red al contactar la API de PDB. Por favor intente más tarde."
     except Exception as e:
-        return f"Ocurrió un error inesperado al procesar los datos de PDB: {e}"
+        return f"Ocurrió un error inesperado al procesar los datos de PDB. Por favor intente más tarde."
