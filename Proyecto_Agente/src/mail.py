@@ -51,8 +51,8 @@ def send_email(to_addr, subject, body, attachment_data=None, attachment_filename
             s.send_message(msg)
         return True, "Correo enviado con éxito."
     except smtplib.SMTPAuthenticationError:
-        return False, "Fallo de autenticación. Revisa SMTP_USER y SMTP_PASS."
+        return False, "Fallo de autenticación de correo. Por favor, verifica las credenciales."
     except smtplib.SMTPConnectError:
-        return False, f"No se pudo conectar al servidor SMTP en {host}:{port}. Revisa SMTP_HOST y SMTP_PORT."
+        return False, "No se pudo conectar al servidor de correo. Por favor, verifica la configuración."
     except Exception as e:
         return False, "Ocurrió un error inesperado al enviar el correo."
