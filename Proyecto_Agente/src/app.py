@@ -137,7 +137,7 @@ if data_choice == "Subir un archivo":
                 })
         except ValueError as e:
             st.session_state.df = None
-            st.error(str(e))
+            st.error("Ocurrió un error de validación al cargar el archivo. Por favor, verifique el formato y el tamaño e intente nuevamente.")
             app_logger.warning(f"Error de validación al cargar archivo: {str(e)}")
         except Exception as e:
             st.session_state.df = None
