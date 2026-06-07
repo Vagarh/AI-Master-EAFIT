@@ -78,7 +78,7 @@ class TestProteinAnalysisAgent(unittest.TestCase):
         response = agent.chat(context, user_question)
 
         # Verificar que la respuesta contiene el mensaje de error esperado
-        self.assertIn("Error al procesar la solicitud con el agente: Error de red simulado", response)
+        self.assertIn("Ocurrió un error al procesar la solicitud con el agente. Por favor, intente nuevamente.", response)
 
 if __name__ == "__main__":
     unittest.main()
