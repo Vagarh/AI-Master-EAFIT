@@ -28,3 +28,8 @@
 **Vulnerability:** User input fields in the Streamlit application (`st.text_input` and `st.chat_input`) lacked length constraints. This could allow maliciously long inputs to cause Denial of Service (DoS) and exhaust resources, especially for LLM inference.
 **Learning:** UI frameworks like Streamlit do not impose default limits on input fields. We must explicitly define bounds like `max_chars` to protect the application backend.
 **Prevention:** Always set explicit `max_chars` limits on all Streamlit user input widgets (`st.text_input`, `st.text_area`, `st.chat_input`) to match expected data sizes.
+
+## 2026-06-09 - [Fix Information Leakage via ValueError in Streamlit UI]
+**Vulnerability:** The exception handler in `app.py` for file uploads caught `ValueError` and directly rendered `str(e)` to the user using `st.error(str(e))`. This could leak sensitive internal implementations, tracebacks, or module errors if an underlying module raised a ValueError that bubbled up.
+**Learning:** Streamlit error UI functions, like `st.error`, expose exactly what you pass them. If you pass an exception's string representation, you risk Information Leakage (CWE-209). Always log the explicit exception on the backend and present a sanitized message to the user.
+**Prevention:** Sanitize the user-facing message to a generic string (e.g. "Error de validación al procesar el archivo") while logging the raw exception `str(e)` via `app_logger`.
