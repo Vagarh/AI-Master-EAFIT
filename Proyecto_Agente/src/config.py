@@ -27,7 +27,8 @@ MODEL_CONFIG = {
     "model_name": "huggingface/together/deepseek-ai/DeepSeek-R1",
     "api_key_env": "HUGGING_FACE_API_KEY",
     "max_tokens": 4000,
-    "temperature": 0.1
+    "temperature": 0.1,
+    "timeout": 60
 }
 
 # Columnas requeridas para el análisis
