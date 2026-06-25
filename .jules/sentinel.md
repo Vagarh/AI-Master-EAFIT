@@ -28,3 +28,8 @@
 **Vulnerability:** User input fields in the Streamlit application (`st.text_input` and `st.chat_input`) lacked length constraints. This could allow maliciously long inputs to cause Denial of Service (DoS) and exhaust resources, especially for LLM inference.
 **Learning:** UI frameworks like Streamlit do not impose default limits on input fields. We must explicitly define bounds like `max_chars` to protect the application backend.
 **Prevention:** Always set explicit `max_chars` limits on all Streamlit user input widgets (`st.text_input`, `st.text_area`, `st.chat_input`) to match expected data sizes.
+
+## 2024-06-25 - [Missing Timeouts on External Connections]
+**Vulnerability:** External connections to SMTP servers and the Hugging Face API lacked explicit timeout values, which could result in the application hanging indefinitely or suffering from resource exhaustion (DoS) if the remote service is slow or unresponsive.
+**Learning:** Relying on default timeouts for external network operations (like `smtplib.SMTP` and `litellm.completion`) is dangerous. Network instability or malicious server behavior can tie up resources and block application execution.
+**Prevention:** Always set explicit and reasonable timeout values (e.g., `timeout=15` for SMTP and `timeout=60` for LLM inference calls) on all functions that communicate over the network.
