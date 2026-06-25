@@ -45,7 +45,8 @@ def send_email(to_addr, subject, body, attachment_data=None, attachment_filename
                            subtype=subtype,
                            filename=attachment_filename)
     try:
-        with smtplib.SMTP(host, port) as s:
+        # Validación de seguridad: Configurar timeout explícito para prevenir DoS
+        with smtplib.SMTP(host, port, timeout=15) as s:
             s.starttls()
             s.login(user, pwd)
             s.send_message(msg)
