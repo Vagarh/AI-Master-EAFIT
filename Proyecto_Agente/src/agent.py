@@ -152,7 +152,9 @@ class ProteinAnalysisAgent:
                 tool_choice="auto",
                 api_key=self.api_key,
                 max_tokens=MODEL_CONFIG.get("max_tokens", 4000),
-                temperature=MODEL_CONFIG.get("temperature", 0.1)
+                temperature=MODEL_CONFIG.get("temperature", 0.1),
+                # Security: Explicit timeout to prevent DoS via resource exhaustion
+                timeout=60
             )
 
             response_message = response.choices[0].message
@@ -215,7 +217,9 @@ class ProteinAnalysisAgent:
                         messages=messages,
                         api_key=self.api_key,
                         max_tokens=MODEL_CONFIG.get("max_tokens", 4000),
-                        temperature=MODEL_CONFIG.get("temperature", 0.1)
+                        temperature=MODEL_CONFIG.get("temperature", 0.1),
+                        # Security: Explicit timeout to prevent DoS via resource exhaustion
+                        timeout=60
                     )
                     final_content = final_response.choices[0].message.content
 
