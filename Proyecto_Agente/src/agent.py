@@ -145,6 +145,7 @@ class ProteinAnalysisAgent:
             # ============================================================
             # PASO 3: Primera llamada al LLM - Decisión de uso de herramientas
             # ============================================================
+            # Validación de seguridad: Timeout explícito para evitar DoS por resource exhaustion
             response = completion(
                 model=self.model_name,
                 messages=messages,
@@ -152,7 +153,8 @@ class ProteinAnalysisAgent:
                 tool_choice="auto",
                 api_key=self.api_key,
                 max_tokens=MODEL_CONFIG.get("max_tokens", 4000),
-                temperature=MODEL_CONFIG.get("temperature", 0.1)
+                temperature=MODEL_CONFIG.get("temperature", 0.1),
+                timeout=60
             )
 
             response_message = response.choices[0].message
@@ -210,12 +212,14 @@ class ProteinAnalysisAgent:
                     # ============================================================
                     # PASO 5: Segunda llamada al LLM - Procesar resultado de herramienta
                     # ============================================================
+                    # Validación de seguridad: Timeout explícito para evitar DoS por resource exhaustion
                     final_response = completion(
                         model=self.model_name,
                         messages=messages,
                         api_key=self.api_key,
                         max_tokens=MODEL_CONFIG.get("max_tokens", 4000),
-                        temperature=MODEL_CONFIG.get("temperature", 0.1)
+                        temperature=MODEL_CONFIG.get("temperature", 0.1),
+                        timeout=60
                     )
                     final_content = final_response.choices[0].message.content
 
