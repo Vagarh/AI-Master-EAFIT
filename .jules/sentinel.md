@@ -28,3 +28,7 @@
 **Vulnerability:** User input fields in the Streamlit application (`st.text_input` and `st.chat_input`) lacked length constraints. This could allow maliciously long inputs to cause Denial of Service (DoS) and exhaust resources, especially for LLM inference.
 **Learning:** UI frameworks like Streamlit do not impose default limits on input fields. We must explicitly define bounds like `max_chars` to protect the application backend.
 **Prevention:** Always set explicit `max_chars` limits on all Streamlit user input widgets (`st.text_input`, `st.text_area`, `st.chat_input`) to match expected data sizes.
+## 2026-07-03 - [Missing Timeouts on External Dependencies]
+**Vulnerability:** The `litellm.completion` and `smtplib.SMTP` calls did not have explicit timeouts configured. If the external service hangs or takes a long time to respond, the application will block indefinitely, leading to resource exhaustion and potential Denial of Service (DoS) for the application.
+**Learning:** External API and network calls in Python (such as those using `requests`, `smtplib`, or SDKs like `litellm`) often have no default timeout or rely on system-level TCP defaults which can be very long (e.g., minutes). This makes the application vulnerable to DoS if the third-party service degrades.
+**Prevention:** Always set explicit, reasonable timeouts (e.g., `timeout=15` or `timeout=60` depending on expected latency) on all network operations to fail fast and free up system resources.
