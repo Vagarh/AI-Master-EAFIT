@@ -21,8 +21,11 @@ def send_email(to_addr, subject, body, attachment_data=None, attachment_filename
     if not to_addr:
         return False, "No se ha proporcionado una dirección de correo de destino."
 
+    if len(to_addr) > 254:
+        return False, "Error de seguridad: La dirección de correo electrónico excede la longitud máxima permitida."
+
     # Validación de seguridad: Validar formato de email para prevenir Header Injection y abuso
-    email_regex = re.compile(r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$')
+    email_regex = re.compile(r'^[a-zA-Z0-9._%+-]{1,64}@[a-zA-Z0-9.-]{1,255}\.[a-zA-Z]{2,63}$')
     if not email_regex.match(to_addr):
         return False, "Error de seguridad: La dirección de correo electrónico proporcionada no es válida."
 

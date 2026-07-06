@@ -32,3 +32,7 @@
 **Vulnerability:** The `litellm.completion` and `smtplib.SMTP` calls did not have explicit timeouts configured. If the external service hangs or takes a long time to respond, the application will block indefinitely, leading to resource exhaustion and potential Denial of Service (DoS) for the application.
 **Learning:** External API and network calls in Python (such as those using `requests`, `smtplib`, or SDKs like `litellm`) often have no default timeout or rely on system-level TCP defaults which can be very long (e.g., minutes). This makes the application vulnerable to DoS if the third-party service degrades.
 **Prevention:** Always set explicit, reasonable timeouts (e.g., `timeout=15` or `timeout=60` depending on expected latency) on all network operations to fail fast and free up system resources.
+## 2026-07-06 - [Strict ReDoS Bounds in email validation]
+**Vulnerability:** Found unbounded quantifiers in the email validation regex (`^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$`) in `Proyecto_Agente/src/mail.py`, making it susceptible to Regular Expression Denial of Service (ReDoS) and allowing unbounded inputs that bypass RFC 5321 length limits.
+**Learning:** ReDoS vulnerabilities often occur when naive, unbounded quantifiers (like `+` or `*`) evaluate extremely long or crafted strings.
+**Prevention:** Apply strict Regular Expression validations using bounded length quantifiers (like `{1,64}`) and add explicit length validation (`len(email) > 254`) checks for user-provided strings before processing them.
