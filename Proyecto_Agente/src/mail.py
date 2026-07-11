@@ -1,6 +1,7 @@
 import os
 import smtplib
 import re
+import ssl
 from email.message import EmailMessage
 
 def send_email(to_addr, subject, body, attachment_data=None, attachment_filename=None, attachment_mimetype=None):
@@ -21,8 +22,13 @@ def send_email(to_addr, subject, body, attachment_data=None, attachment_filename
     if not to_addr:
         return False, "No se ha proporcionado una dirección de correo de destino."
 
+    # RFC 5321 length limit
+    if len(to_addr) > 254:
+        return False, "Error de seguridad: La dirección de correo electrónico excede el tamaño máximo permitido."
+
     # Validación de seguridad: Validar formato de email para prevenir Header Injection y abuso
-    email_regex = re.compile(r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$')
+    # Usar cuantificadores limitados para evitar ReDoS (Regular Expression Denial of Service)
+    email_regex = re.compile(r'^[a-zA-Z0-9._%+-]{1,64}@[a-zA-Z0-9.-]{1,253}\.[a-zA-Z]{2,63}$')
     if not email_regex.match(to_addr):
         return False, "Error de seguridad: La dirección de correo electrónico proporcionada no es válida."
 
@@ -46,7 +52,7 @@ def send_email(to_addr, subject, body, attachment_data=None, attachment_filename
                            filename=attachment_filename)
     try:
         with smtplib.SMTP(host, port, timeout=15) as s:
-            s.starttls()
+            s.starttls(context=ssl.create_default_context())
             s.login(user, pwd)
             s.send_message(msg)
         return True, "Correo enviado con éxito."
