@@ -1,6 +1,7 @@
 import os
 import smtplib
 import re
+import ssl
 from email.message import EmailMessage
 
 def send_email(to_addr, subject, body, attachment_data=None, attachment_filename=None, attachment_mimetype=None):
@@ -46,7 +47,8 @@ def send_email(to_addr, subject, body, attachment_data=None, attachment_filename
                            filename=attachment_filename)
     try:
         with smtplib.SMTP(host, port, timeout=15) as s:
-            s.starttls()
+            context = ssl.create_default_context()
+            s.starttls(context=context)
             s.login(user, pwd)
             s.send_message(msg)
         return True, "Correo enviado con éxito."
