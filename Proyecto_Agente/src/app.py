@@ -3,26 +3,25 @@ import pandas as pd
 import os
 import time
 from io import StringIO
-import sys
 from io_utils import read_any
 from eda import (
-    validate_eda, plot_length_distribution, plot_q3_distribution, plot_nonstd_aa_pie,
-    plot_resolution_distribution, plot_rfactor_distribution, plot_experimental_methods, plot_length_vs_resolution
+    validate_eda,
+    plot_length_distribution,
+    plot_q3_distribution,
+    plot_nonstd_aa_pie,
+    plot_resolution_distribution,
+    plot_rfactor_distribution,
+    plot_experimental_methods,
+    plot_length_vs_resolution,
 )
-from report import generate_report, generate_pdf_report
+from report import generate_pdf_report
 from mail import send_email
 from agent import ProteinAnalysisAgent
 from analytics import analytics_tracker, display_insights_panel, create_usage_dashboard
-from config import APP_CONFIG, MESSAGES, REQUIRED_COLUMNS
-from logger import app_logger, log_user_interaction
+from config import APP_CONFIG
+from logger import app_logger
 from dotenv import load_dotenv
 import uuid
-
-
-# Cargar variables de entorno desde el archivo .env
-# Esto debe hacerse al principio del script
-load_dotenv()
-st.set_page_config(**APP_CONFIG)
 
 # ---- Constantes y Rutas ----
 _SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -30,48 +29,23 @@ _PROJECT_ROOT = os.path.dirname(_SCRIPT_DIR)
 EXAMPLE_FILENAME = "2018-06-06-pdb-intersect-pisces.csv"
 EXAMPLE_FILE_PATH = os.path.join(_PROJECT_ROOT, EXAMPLE_FILENAME)
 
-# ---- Estado ----
+
 def initialize_state():
     """Inicializa el estado de la sesión si es necesario."""
     defaults = {
-        "df": None, 
-        "messages": [], 
-        "eda_ok": False, 
-        "ran": False, 
-        "agent": None, 
-        "eda_context": "", 
+        "df": None,
+        "messages": [],
+        "eda_ok": False,
+        "ran": False,
+        "agent": None,
+        "eda_context": "",
         "report_pdf": None,
-        "session_id": str(uuid.uuid4())
+        "session_id": str(uuid.uuid4()),
     }
     for key, value in defaults.items():
         if key not in st.session_state:
             st.session_state[key] = value
 
-initialize_state()
-            
-# ---- Sidebar: Panel de proyecto ----
-st.sidebar.markdown("# 🔬 Agente de Análisis")
-st.sidebar.markdown("### 👨‍💻 Información del Proyecto")
-st.sidebar.markdown(
-    """
-    **Autor:** [Juan Felipe Cardona](https://www.linkedin.com/in/juan-felipe-c-8a010b121/)  
-    **Repositorio:** [GitHub](https://github.com/Vagarh/AI-Master-EAFIT)  
-    **Universidad:** EAFIT - Maestría en Ciencia de Datos
-
-    ---
-    🧬 **Análisis Inteligente de Proteínas**  
-    Combina análisis exploratorio de datos con IA conversacional para explorar datasets de proteínas de manera interactiva.
-    """)
-with st.sidebar.expander("📚 Más información"):
-    st.markdown("""
-        - **Análisis Exploratorio (EDA):** Genera visualizaciones automáticas sobre la distribución de secuencias, estructuras secundarias y calidad de los datos.
-        - **Agente Conversacional:** Responde preguntas sobre tus datos y utiliza herramientas externas como **BLAST** y **PDB** para obtener información enriquecida.
-        - **Reportes:** Descarga o envía por email un informe completo en PDF.
-        - **Modelo LLM:** `deepseek-ai/DeepSeek-R1` (vía Hugging Face).
-    """)
-email_to = st.sidebar.text_input("Enviar resultados a (opcional)", max_chars=254)
-
-st.sidebar.markdown("---")
 
 def reset_session():
     """Limpia el estado de la sesión y reinicia la aplicación."""
@@ -79,153 +53,183 @@ def reset_session():
     initialize_state()
     st.rerun()
 
-if st.sidebar.button("🔄 Restablecer Sesión"):
-    reset_session()
 
-# ---- Inicialización del Agente (desde variables de entorno) ----
-if "agent" not in st.session_state or st.session_state.agent is None:
-    try:
-        # El constructor de ProteinAnalysisAgent buscará la variable de entorno HUGGING_FACE_API_KEY
-        st.session_state.agent = ProteinAnalysisAgent()
-    except ValueError as e:
-        # Si no se encuentra la API key, el agente no se crea.
-        # La UI mostrará que el agente no está listo.
-        st.session_state.agent = None
+def render_sidebar():
+    st.sidebar.markdown("# 🔬 Agente de Análisis")
+    st.sidebar.markdown("### 👨‍💻 Información del Proyecto")
+    st.sidebar.markdown("""
+        **Autor:** [Juan Felipe Cardona](https://www.linkedin.com/in/juan-felipe-c-8a010b121/)
+        **Repositorio:** [GitHub](https://github.com/Vagarh/AI-Master-EAFIT)
+        **Universidad:** EAFIT - Maestría en Ciencia de Datos
 
-# ---- Header Principal ----
-st.markdown("# 🔬 Agente de Análisis de Proteínas")
-st.markdown("### Análisis Exploratorio de Datos + IA Conversacional")
-st.markdown("---")
+        ---
+        🧬 **Análisis Inteligente de Proteínas**
+        Combina análisis exploratorio de datos con IA conversacional para explorar datasets de proteínas de manera interactiva.
+        """)
+    with st.sidebar.expander("📚 Más información"):
+        st.markdown("""
+            - **Análisis Exploratorio (EDA):** Genera visualizaciones automáticas sobre la distribución de secuencias, estructuras secundarias y calidad de los datos.
+            - **Agente Conversacional:** Responde preguntas sobre tus datos y utiliza herramientas externas como **BLAST** y **PDB** para obtener información enriquecida.
+            - **Reportes:** Descarga o envía por email un informe completo en PDF.
+            - **Modelo LLM:** `deepseek-ai/DeepSeek-R1` (vía Hugging Face).
+        """)
+    email_to = st.sidebar.text_input("Enviar resultados a (opcional)", max_chars=254)
+    st.sidebar.markdown("---")
 
-# ---- Carga de datos ----
-st.markdown("## 📁 1. Carga tu Dataset")
+    if st.sidebar.button("🔄 Restablecer Sesión"):
+        reset_session()
 
-with st.expander("Ver requisitos del formato y descargar plantilla"):
-    st.markdown("""
-    Para que el análisis funcione correctamente, tu archivo (CSV, XLS o XLSX) debe contener, como mínimo, las siguientes columnas:
-    - `seq`: La secuencia de aminoácidos.
-    - `sst3`: La secuencia de estructura secundaria en 3 estados (H, E, C).
-    - `sst8`: La secuencia de estructura secundaria en 8 estados.
-    - `len`: La longitud de la secuencia (numérico).
-    - `has_nonstd_aa`: Un valor booleano (`True`/`False`) que indica si la secuencia contiene aminoácidos no estándar.
+    return email_to
 
-    **La forma más fácil de empezar es usar nuestro archivo de ejemplo como plantilla.**
-    """)
-    if os.path.exists(EXAMPLE_FILE_PATH):
-        with open(EXAMPLE_FILE_PATH, "rb") as fp:
-            st.download_button(label="📥 Descargar plantilla (.csv)", data=fp, file_name=f"plantilla_{EXAMPLE_FILENAME}", mime="text/csv",
-                               help="Descarga el archivo de ejemplo para usarlo como base para tus propios datos.")
 
-data_options = ["Subir un archivo", "Usar datos de ejemplo"]
-data_choice = st.radio("Selecciona la fuente de datos:", data_options)
+def render_data_upload():
+    st.markdown("## 📁 1. Carga tu Dataset")
+    with st.expander("Ver requisitos del formato y descargar plantilla"):
+        st.markdown("""
+        Para que el análisis funcione correctamente, tu archivo (CSV, XLS o XLSX) debe contener, como mínimo, las siguientes columnas:
+        - `seq`: La secuencia de aminoácidos.
+        - `sst3`: La secuencia de estructura secundaria en 3 estados (H, E, C).
+        - `sst8`: La secuencia de estructura secundaria en 8 estados.
+        - `len`: La longitud de la secuencia (numérico).
+        - `has_nonstd_aa`: Un valor booleano (`True`/`False`) que indica si la secuencia contiene aminoácidos no estándar.
 
-if data_choice == "Subir un archivo":
-    file = st.file_uploader(
-        "Sube un .csv, .xls o .xlsx",
-        type=["csv", "xls", "xlsx"],
-        accept_multiple_files=False
-    )
-    if file:
-        try:
-            st.session_state.df = read_any(file)
-            if st.session_state.df is not None:
-                st.success(f"Dataset cargado: {st.session_state.df.shape[0]} filas x {st.session_state.df.shape[1]} columnas")
-                analytics_tracker.track_event("dataset_loaded", {
-                    "filename": file.name,
-                    "rows": st.session_state.df.shape[0],
-                    "columns": st.session_state.df.shape[1]
-                })
-        except ValueError as e:
-            st.session_state.df = None
-            st.error(str(e))
-            app_logger.warning(f"Error de validación al cargar archivo: {str(e)}")
-        except Exception as e:
-            st.session_state.df = None
-            st.error("Ocurrió un error inesperado al procesar el archivo. Por favor, verifique el formato y vuelva a intentarlo.")
-            app_logger.error(f"Error inesperado al cargar archivo {file.name}: {str(e)}")
-    else:
-        # Clear dataframe if no file is uploaded in this mode
-        st.session_state.df = None
-else:  # "Usar datos de ejemplo"
-    if os.path.exists(EXAMPLE_FILE_PATH):
-        st.info(
-            f"Se cargará el dataset de ejemplo '{EXAMPLE_FILENAME}'. Puedes encontrar este archivo en el repositorio del proyecto."
-        )
-        try:
-            st.session_state.df = pd.read_csv(EXAMPLE_FILE_PATH)
-            if st.session_state.df is not None:
-                st.success(
-                    f"Dataset de ejemplo cargado: {st.session_state.df.shape[0]} filas x {st.session_state.df.shape[1]} columnas"
+        **La forma más fácil de empezar es usar nuestro archivo de ejemplo como plantilla.**
+        """)
+        if os.path.exists(EXAMPLE_FILE_PATH):
+            with open(EXAMPLE_FILE_PATH, "rb") as fp:
+                st.download_button(
+                    label="📥 Descargar plantilla (.csv)",
+                    data=fp,
+                    file_name=f"plantilla_{EXAMPLE_FILENAME}",
+                    mime="text/csv",
+                    help="Descarga el archivo de ejemplo para usarlo como base para tus propios datos.",
                 )
-        except pd.errors.ParserError:
-            st.error("Error al procesar el archivo de ejemplo: El formato no es válido o está corrupto.")
+
+    data_options = ["Subir un archivo", "Usar datos de ejemplo"]
+    data_choice = st.radio("Selecciona la fuente de datos:", data_options)
+
+    if data_choice == "Subir un archivo":
+        file = st.file_uploader(
+            "Sube un .csv, .xls o .xlsx",
+            type=["csv", "xls", "xlsx"],
+            accept_multiple_files=False,
+        )
+        if file:
+            try:
+                st.session_state.df = read_any(file)
+                if st.session_state.df is not None:
+                    st.success(
+                        f"Dataset cargado: {st.session_state.df.shape[0]} filas x {st.session_state.df.shape[1]} columnas"
+                    )
+                    analytics_tracker.track_event(
+                        "dataset_loaded",
+                        {
+                            "filename": file.name,
+                            "rows": st.session_state.df.shape[0],
+                            "columns": st.session_state.df.shape[1],
+                        },
+                    )
+            except ValueError as e:
+                st.session_state.df = None
+                st.error(str(e))
+                app_logger.warning("Error de validación al cargar archivo")
+            except Exception as e:
+                st.session_state.df = None
+                st.error(
+                    "Ocurrió un error inesperado al procesar el archivo. Por favor, verifique el formato y vuelva a intentarlo."
+                )
+                app_logger.error(
+                    f"Error inesperado al cargar archivo {file.name}: {str(e)}"
+                )
+        else:
+            # Clear dataframe if no file is uploaded in this mode
             st.session_state.df = None
-        except Exception:
-            st.error("Ocurrió un error inesperado al cargar el dataset de ejemplo.")
+    else:  # "Usar datos de ejemplo"
+        if os.path.exists(EXAMPLE_FILE_PATH):
+            st.info(
+                f"Se cargará el dataset de ejemplo '{EXAMPLE_FILENAME}'. Puedes encontrar este archivo en el repositorio del proyecto."
+            )
+            try:
+                st.session_state.df = pd.read_csv(EXAMPLE_FILE_PATH)
+                if st.session_state.df is not None:
+                    st.success(
+                        f"Dataset de ejemplo cargado: {st.session_state.df.shape[0]} filas x {st.session_state.df.shape[1]} columnas"
+                    )
+            except pd.errors.ParserError:
+                st.error(
+                    "Error al procesar el archivo de ejemplo: El formato no es válido o está corrupto."
+                )
+                st.session_state.df = None
+            except Exception:
+                st.error("Ocurrió un error inesperado al cargar el dataset de ejemplo.")
+                st.session_state.df = None
+        else:
+            st.error(
+                f"No se encontró el archivo de ejemplo. Se esperaba en: {EXAMPLE_FILE_PATH}"
+            )
             st.session_state.df = None
-    else:
-        st.error(f"No se encontró el archivo de ejemplo. Se esperaba en: {EXAMPLE_FILE_PATH}")
-        st.session_state.df = None
 
-# ---- Reglas de habilitación ----
-agent_ready = st.session_state.agent is not None
-ready = st.session_state.df is not None and agent_ready
 
-with st.container(border=True):
-    st.markdown("#### 🔍 Estado del Sistema")
-    col1, col2, col3 = st.columns(3)
-    
-    # Estado del Dataset
-    if st.session_state.df is not None:
-        col1.success("✅ Dataset Cargado", icon="📁")
-        col1.caption(f"{st.session_state.df.shape[0]:,} filas × {st.session_state.df.shape[1]} columnas")
-    else:
-        col1.warning("⏳ Dataset Pendiente", icon="📁")
-        col1.caption("Esperando archivo...")
+def render_system_status(agent_ready):
+    with st.container(border=True):
+        st.markdown("#### 🔍 Estado del Sistema")
+        col1, col2, col3 = st.columns(3)
 
-    # Estado del Agente
-    if agent_ready:
-        col2.success("✅ Agente de IA Listo", icon="🤖")
-        col2.caption("DeepSeek-R1 conectado")
-    else:
-        col2.error("❌ Agente No Configurado", icon="🤖")
-        col2.caption("Falta API Key")
-    
-    # Estado del Análisis
-    if st.session_state.ran:
-        col3.success("✅ Análisis Completado", icon="📊")
-        col3.caption("Listo para explorar")
-    else:
-        col3.info("⏳ Análisis Pendiente", icon="📊")
-        col3.caption("Presiona 'Iniciar Análisis'")
+        # Estado del Dataset
+        if st.session_state.df is not None:
+            col1.success("✅ Dataset Cargado", icon="📁")
+            col1.caption(
+                f"{st.session_state.df.shape[0]:,} filas × {st.session_state.df.shape[1]} columnas"
+            )
+        else:
+            col1.warning("⏳ Dataset Pendiente", icon="📁")
+            col1.caption("Esperando archivo...")
 
-if not agent_ready:
-    st.warning("La API Key de Hugging Face no está configurada. Para habilitar el agente, define la variable de entorno `HUGGING_FACE_API_KEY` en tu sistema o en un archivo `.env`.")
+        # Estado del Agente
+        if agent_ready:
+            col2.success("✅ Agente de IA Listo", icon="🤖")
+            col2.caption("DeepSeek-R1 conectado")
+        else:
+            col2.error("❌ Agente No Configurado", icon="🤖")
+            col2.caption("Falta API Key")
 
-# ---- Flujo Principal de la App ----
+        # Estado del Análisis
+        if st.session_state.ran:
+            col3.success("✅ Análisis Completado", icon="📊")
+            col3.caption("Listo para explorar")
+        else:
+            col3.info("⏳ Análisis Pendiente", icon="📊")
+            col3.caption("Presiona 'Iniciar Análisis'")
 
-# 1. Vista de Configuración (si el análisis no se ha ejecutado)
-if not st.session_state.ran:
+    if not agent_ready:
+        st.warning(
+            "La API Key de Hugging Face no está configurada. Para habilitar el agente, define la variable de entorno `HUGGING_FACE_API_KEY` en tu sistema o en un archivo `.env`."
+        )
+
+
+def render_analysis_setup(ready):
     st.markdown("## 🚀 2. Inicia el Análisis")
-    
+
     if ready:
         st.success("🎉 ¡Todo listo! El sistema está configurado correctamente.")
-        st.info("El análisis procesará tu dataset y preparará el agente de IA con herramientas bioinformáticas (BLAST, PDB).")
+        st.info(
+            "El análisis procesará tu dataset y preparará el agente de IA con herramientas bioinformáticas (BLAST, PDB)."
+        )
     else:
         st.warning("⚠️ Completa los requisitos anteriores antes de continuar.")
-    
+
     start = st.button(
-        "🚀 Iniciar Análisis Completo", 
-        disabled=not ready, 
-        type="primary", 
+        "🚀 Iniciar Análisis Completo",
+        disabled=not ready,
+        type="primary",
         help="Procesa el dataset, genera estadísticas y activa el agente de IA",
-        use_container_width=True
+        use_container_width=True,
     )
     if start and ready:
         with st.spinner("Procesando dataset y preparando el agente..."):
             df = st.session_state.df
             st.session_state.eda_ok = validate_eda(df)
-            
+
             # Generar contexto de EDA para el agente
             if st.session_state.eda_ok:
                 buffer = StringIO()
@@ -244,29 +248,32 @@ if not st.session_state.ran:
                     "- **Protein Data Bank (PDB):** Puedo buscar información sobre una estructura si me das su ID de 4 caracteres.\n\n"
                     "Puedes explorar el dashboard o hacerme una pregunta. ¿En qué te puedo ayudar?"
                 )
-                st.session_state.messages = [{"role": "assistant", "content": welcome_message}]
-            
+                st.session_state.messages = [
+                    {"role": "assistant", "content": welcome_message}
+                ]
+
             st.session_state.ran = True
-        
+
         st.success("¡Análisis completado!")
         time.sleep(1)
         st.rerun()
 
-# 2. Vista de Resultados (si el análisis ya se ejecutó)
-else:
-    # ---- Tabs: Chat, Dashboard y EDA ----
-    tab_chat, tab_dashboard, tab_eda, tab_insights = st.tabs([
-        "💬 Chat con Agente", 
-        "📊 Dashboard de Insights", 
-        "📄 Exploración de Datos (EDA)",
-        "🔍 Insights Automáticos"
-    ])
+
+def render_results_tabs():
+    tab_chat, tab_dashboard, tab_eda, tab_insights = st.tabs(
+        [
+            "💬 Chat con Agente",
+            "📊 Dashboard de Insights",
+            "📄 Exploración de Datos (EDA)",
+            "🔍 Insights Automáticos",
+        ]
+    )
 
     with tab_chat:
         st.subheader("💬 Conversa con el Agente")
         for m in st.session_state.messages:
-            with st.chat_message(m['role']):
-                st.markdown(m['content'])
+            with st.chat_message(m["role"]):
+                st.markdown(m["content"])
 
         prompt = None
         chat_disabled = not st.session_state.ran or not st.session_state.agent
@@ -283,23 +290,31 @@ else:
                 with col2:
                     if st.button("📏 Análisis de longitudes", use_container_width=True):
                         prompt = "Analiza la distribución de longitudes: promedio, mediana, y valores atípicos."
-                    if st.button("🧬 Estructuras secundarias", use_container_width=True):
+                    if st.button(
+                        "🧬 Estructuras secundarias", use_container_width=True
+                    ):
                         prompt = "¿Qué tipo de estructura secundaria es más común en el dataset?"
-                
+
                 st.markdown("**🔬 Herramientas Bioinformáticas:**")
                 col3, col4 = st.columns(2)
                 with col3:
-                    if st.button("🧪 BLAST de primera secuencia", use_container_width=True):
+                    if st.button(
+                        "🧪 BLAST de primera secuencia", use_container_width=True
+                    ):
                         prompt = "Toma la primera secuencia del dataset y búscala en BLAST para encontrar proteínas similares."
                     if st.button("📚 Información PDB 2HHB", use_container_width=True):
                         prompt = "Busca información detallada del PDB ID '2HHB' (hemoglobina humana)."
                 with col4:
-                    if st.button("🔬 BLAST secuencia más larga", use_container_width=True):
+                    if st.button(
+                        "🔬 BLAST secuencia más larga", use_container_width=True
+                    ):
                         prompt = "Identifica la secuencia más larga del dataset y búscala en BLAST."
                     if st.button("📊 Comparar con PDB 1A3N", use_container_width=True):
                         prompt = "Busca información del PDB ID '1A3N' y compárala con nuestro dataset."
 
-        if chat_input := st.chat_input("O escribe tu propia pregunta...", max_chars=1000, disabled=chat_disabled):
+        if chat_input := st.chat_input(
+            "O escribe tu propia pregunta...", max_chars=1000, disabled=chat_disabled
+        ):
             prompt = chat_input
 
         if prompt:
@@ -311,46 +326,74 @@ else:
                 with st.spinner("Pensando..."):
                     chat_history = st.session_state.messages[:-1]
                     assistant_reply = st.session_state.agent.chat(
-                        context=st.session_state.eda_context, user_question=prompt, chat_history=chat_history
+                        context=st.session_state.eda_context,
+                        user_question=prompt,
+                        chat_history=chat_history,
                     )
                     st.markdown(assistant_reply)
-                    st.session_state.messages.append({"role": "assistant", "content": assistant_reply})
+                    st.session_state.messages.append(
+                        {"role": "assistant", "content": assistant_reply}
+                    )
 
     with tab_dashboard:
         if st.session_state.eda_ok:
             df = st.session_state.df
             st.subheader("📊 Dashboard Interactivo de Insights")
-            st.markdown("Utiliza los filtros para explorar subconjuntos de datos. Los gráficos y métricas se actualizarán automáticamente.")
+            st.markdown(
+                "Utiliza los filtros para explorar subconjuntos de datos. Los gráficos y métricas se actualizarán automáticamente."
+            )
 
             with st.container(border=True):
                 st.markdown("#### ⚙️ Filtros Interactivos")
-                min_len, max_len = int(df['len'].min()), int(df['len'].max())
-                selected_len_range = st.slider("Filtrar por longitud de secuencia:", min_value=min_len, max_value=max_len, value=(min_len, max_len))
+                min_len, max_len = int(df["len"].min()), int(df["len"].max())
+                selected_len_range = st.slider(
+                    "Filtrar por longitud de secuencia:",
+                    min_value=min_len,
+                    max_value=max_len,
+                    value=(min_len, max_len),
+                )
 
-            df_filtered = df[(df['len'] >= selected_len_range[0]) & (df['len'] <= selected_len_range[1])]
-            st.info(f"Mostrando **{len(df_filtered):,}** de **{len(df):,}** secuencias según los filtros aplicados.")
+            df_filtered = df[
+                (df["len"] >= selected_len_range[0])
+                & (df["len"] <= selected_len_range[1])
+            ]
+            st.info(
+                f"Mostrando **{len(df_filtered):,}** de **{len(df):,}** secuencias según los filtros aplicados."
+            )
 
             if not df_filtered.empty:
                 # Métricas principales
                 col1, col2, col3, col4 = st.columns(4)
                 col1.metric(
-                    "📊 Secuencias", 
+                    "📊 Secuencias",
                     f"{df_filtered.shape[0]:,}",
-                    delta=f"{df_filtered.shape[0] - len(df):,}" if df_filtered.shape[0] != len(df) else None
+                    delta=(
+                        f"{df_filtered.shape[0] - len(df):,}"
+                        if df_filtered.shape[0] != len(df)
+                        else None
+                    ),
                 )
                 col2.metric(
-                    "📏 Longitud Promedio", 
+                    "📏 Longitud Promedio",
                     f"{df_filtered['len'].mean():.0f} AA",
-                    delta=f"{df_filtered['len'].mean() - df['len'].mean():.0f}" if df_filtered.shape[0] != len(df) else None
+                    delta=(
+                        f"{df_filtered['len'].mean() - df['len'].mean():.0f}"
+                        if df_filtered.shape[0] != len(df)
+                        else None
+                    ),
                 )
                 col3.metric(
-                    "🧪 AA No Estándar", 
+                    "🧪 AA No Estándar",
                     f"{df_filtered['has_nonstd_aa'].sum() / len(df_filtered):.1%}",
-                    delta=f"{(df_filtered['has_nonstd_aa'].sum() / len(df_filtered)) - (df['has_nonstd_aa'].sum() / len(df)):.1%}" if df_filtered.shape[0] != len(df) else None
+                    delta=(
+                        f"{(df_filtered['has_nonstd_aa'].sum() / len(df_filtered)) - (df['has_nonstd_aa'].sum() / len(df)):.1%}"
+                        if df_filtered.shape[0] != len(df)
+                        else None
+                    ),
                 )
                 col4.metric(
-                    "🔬 Rango Longitud", 
-                    f"{df_filtered['len'].min()}-{df_filtered['len'].max()}"
+                    "🔬 Rango Longitud",
+                    f"{df_filtered['len'].min()}-{df_filtered['len'].max()}",
                 )
 
                 st.markdown("#### Distribución de la Longitud de las Secuencias")
@@ -363,78 +406,96 @@ else:
                 with col_viz2:
                     st.markdown("#### Proporción de Aminoácidos No Estándar")
                     st.pyplot(plot_nonstd_aa_pie(df_filtered))
-                
+
                 st.markdown("---")
                 st.markdown("### Análisis de Calidad Estructural")
-                if 'resolution' in df_filtered.columns:
+                if "resolution" in df_filtered.columns:
                     st.markdown("#### Distribución de Resoluciones")
                     st.pyplot(plot_resolution_distribution(df_filtered))
-                if 'R-factor' in df_filtered.columns:
+                if "R-factor" in df_filtered.columns:
                     st.markdown("#### Distribución del R-factor")
                     st.pyplot(plot_rfactor_distribution(df_filtered))
-                if 'Exptl.' in df_filtered.columns:
+                if "Exptl." in df_filtered.columns:
                     st.markdown("#### Métodos Experimentales")
                     st.pyplot(plot_experimental_methods(df_filtered))
-                if 'len' in df_filtered.columns and 'resolution' in df_filtered.columns:
+                if "len" in df_filtered.columns and "resolution" in df_filtered.columns:
                     st.markdown("#### Longitud vs. Resolución")
                     st.pyplot(plot_length_vs_resolution(df_filtered))
             else:
                 st.warning("No hay datos que mostrar con los filtros seleccionados.")
         else:
-            st.warning("Dashboard no disponible: faltan columnas mínimas para el análisis.")
+            st.warning(
+                "Dashboard no disponible: faltan columnas mínimas para el análisis."
+            )
 
     with tab_eda:
         if st.session_state.eda_ok:
             df = st.session_state.df
             st.subheader("📄 Exploración Detallada de Datos (EDA)")
-            st.markdown("Aquí puedes inspeccionar la estructura y los valores del dataset. Por defecto se muestra una vista previa de las primeras 20 filas.")
-            
+            st.markdown(
+                "Aquí puedes inspeccionar la estructura y los valores del dataset. Por defecto se muestra una vista previa de las primeras 20 filas."
+            )
+
             st.dataframe(df.head(20))
 
             with st.expander("Ver dataset completo"):
                 st.dataframe(df)
 
             with st.expander("Ver detalles estadísticos"):
-                st.markdown(f"**Dimensiones:** {df.shape[0]} filas x {df.shape[1]} columnas")
+                st.markdown(
+                    f"**Dimensiones:** {df.shape[0]} filas x {df.shape[1]} columnas"
+                )
                 st.markdown("**Resumen de valores nulos por columna**")
                 st.write(df.isna().sum().to_frame("nulos"))
                 st.markdown("**Estadísticas descriptivas de columnas numéricas**")
                 st.write(df.select_dtypes("number").describe().T)
         else:
-            st.warning("Exploración no disponible: faltan columnas mínimas {'seq','sst3','sst8','len','has_nonstd_aa'}")
-    
+            st.warning(
+                "Exploración no disponible: faltan columnas mínimas {'seq','sst3','sst8','len','has_nonstd_aa'}"
+            )
+
     with tab_insights:
         if st.session_state.eda_ok:
             display_insights_panel(st.session_state.df)
-            
+
             with st.expander("📈 Analytics de Uso", expanded=False):
                 create_usage_dashboard()
         else:
-            st.warning("Insights no disponibles: faltan columnas mínimas para el análisis.")
+            st.warning(
+                "Insights no disponibles: faltan columnas mínimas para el análisis."
+            )
 
+
+def render_report_section(email_to):
     st.markdown("## 📋 3. Obtén tus Resultados")
-    st.markdown("Descarga o comparte un reporte completo con todos los análisis realizados.")
-    
+    st.markdown(
+        "Descarga o comparte un reporte completo con todos los análisis realizados."
+    )
+
     # Generar el PDF solo una vez y guardarlo en caché en el estado de la sesión para mejorar el rendimiento
     if st.session_state.report_pdf is None:
         with st.spinner("Generando reporte PDF por primera vez..."):
-            st.session_state.report_pdf = generate_pdf_report(st.session_state.eda_ok, st.session_state.df)
+            st.session_state.report_pdf = generate_pdf_report(
+                st.session_state.eda_ok, st.session_state.df
+            )
     report_content_pdf = st.session_state.report_pdf
 
     col1, col2, col3 = st.columns([2, 2, 1])
     with col1:
         st.download_button(
-            label="📥 Descargar Reporte PDF", 
-            data=report_content_pdf, 
-            file_name=f"reporte_proteinas_{pd.Timestamp.now().strftime('%Y%m%d_%H%M')}.pdf", 
-            mime="application/pdf", 
+            label="📥 Descargar Reporte PDF",
+            data=report_content_pdf,
+            file_name=f"reporte_proteinas_{pd.Timestamp.now().strftime('%Y%m%d_%H%M')}.pdf",
+            mime="application/pdf",
             help="Descarga un informe completo en formato PDF con todos los análisis y gráficos.",
-            use_container_width=True
+            use_container_width=True,
         )
     with col2:
         if st.button("📧 Enviar por Email", use_container_width=True):
             if not email_to:
-                st.warning("Por favor, introduce una dirección de correo en el panel de la izquierda.")
+                st.warning(
+                    "Por favor, introduce una dirección de correo en el panel de la izquierda."
+                )
             else:
                 with st.spinner("Enviando correo..."):
                     email_body = f"""
@@ -451,12 +512,12 @@ else:
                     Agente de Análisis de Proteínas
                     """
                     ok, message = send_email(
-                        email_to, 
-                        f"Reporte de Análisis de Proteínas - {pd.Timestamp.now().strftime('%d/%m/%Y')}", 
-                        email_body, 
-                        attachment_data=report_content_pdf, 
-                        attachment_filename=f"reporte_proteinas_{pd.Timestamp.now().strftime('%Y%m%d_%H%M')}.pdf", 
-                        attachment_mimetype="application/pdf"
+                        email_to,
+                        f"Reporte de Análisis de Proteínas - {pd.Timestamp.now().strftime('%d/%m/%Y')}",
+                        email_body,
+                        attachment_data=report_content_pdf,
+                        attachment_filename=f"reporte_proteinas_{pd.Timestamp.now().strftime('%Y%m%d_%H%M')}.pdf",
+                        attachment_mimetype="application/pdf",
                     )
                     if ok:
                         st.success(message)
@@ -466,3 +527,48 @@ else:
         if st.button("🔄", help="Regenerar reporte", use_container_width=True):
             st.session_state.report_pdf = None
             st.rerun()
+
+
+def main():
+    # Cargar variables de entorno desde el archivo .env
+    # Esto debe hacerse al principio del script
+    load_dotenv()
+    st.set_page_config(**APP_CONFIG)
+
+    initialize_state()
+
+    email_to = render_sidebar()
+
+    # ---- Inicialización del Agente (desde variables de entorno) ----
+    if "agent" not in st.session_state or st.session_state.agent is None:
+        try:
+            # El constructor de ProteinAnalysisAgent buscará la variable de entorno HUGGING_FACE_API_KEY
+            st.session_state.agent = ProteinAnalysisAgent()
+        except ValueError:
+            # Si no se encuentra la API key, el agente no se crea.
+            # La UI mostrará que el agente no está listo.
+            st.session_state.agent = None
+
+    # ---- Header Principal ----
+    st.markdown("# 🔬 Agente de Análisis de Proteínas")
+    st.markdown("### Análisis Exploratorio de Datos + IA Conversacional")
+    st.markdown("---")
+
+    render_data_upload()
+
+    # ---- Reglas de habilitación ----
+    agent_ready = st.session_state.agent is not None
+    ready = st.session_state.df is not None and agent_ready
+
+    render_system_status(agent_ready)
+
+    # ---- Flujo Principal de la App ----
+    if not st.session_state.ran:
+        render_analysis_setup(ready)
+    else:
+        render_results_tabs()
+        render_report_section(email_to)
+
+
+if __name__ == "__main__":
+    main()
