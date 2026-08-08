@@ -8,6 +8,9 @@ import plotly.graph_objects as go
 from datetime import datetime, timedelta
 import json
 from pathlib import Path
+import threading
+
+_analytics_lock = threading.Lock()
 
 class AnalyticsTracker:
     """Rastrea y analiza el uso de la aplicación"""
@@ -31,12 +34,13 @@ class AnalyticsTracker:
             "data": data or {}
         }
         
-        # Cargar eventos existentes
-        events = self._load_events()
-        events.append(event)
-        
-        # Guardar eventos actualizados
-        self._save_events(events)
+        with _analytics_lock:
+            # Cargar eventos existentes
+            events = self._load_events()
+            events.append(event)
+
+            # Guardar eventos actualizados
+            self._save_events(events)
     
     def _load_events(self) -> list:
         """Carga eventos existentes del archivo"""

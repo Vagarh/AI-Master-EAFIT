@@ -32,3 +32,8 @@
 **Vulnerability:** The `litellm.completion` and `smtplib.SMTP` calls did not have explicit timeouts configured. If the external service hangs or takes a long time to respond, the application will block indefinitely, leading to resource exhaustion and potential Denial of Service (DoS) for the application.
 **Learning:** External API and network calls in Python (such as those using `requests`, `smtplib`, or SDKs like `litellm`) often have no default timeout or rely on system-level TCP defaults which can be very long (e.g., minutes). This makes the application vulnerable to DoS if the third-party service degrades.
 **Prevention:** Always set explicit, reasonable timeouts (e.g., `timeout=15` or `timeout=60` depending on expected latency) on all network operations to fail fast and free up system resources.
+
+## 2026-07-17 - [Fix Race Condition in Analytics Tracker]
+**Vulnerability:** The `AnalyticsTracker` read and wrote to the `usage_data.json` file without synchronization, leading to potential data corruption via a race condition under concurrent Streamlit usage.
+**Learning:** In multi-threaded environments like Streamlit, concurrent file operations must be synchronized using locks (e.g., `threading.Lock`) to prevent race conditions during read-modify-write cycles.
+**Prevention:** Always use synchronization primitives like thread locks or file locks when performing stateful I/O operations from shared web application workers.
