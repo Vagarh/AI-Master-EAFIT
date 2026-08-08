@@ -32,3 +32,8 @@
 **Vulnerability:** The `litellm.completion` and `smtplib.SMTP` calls did not have explicit timeouts configured. If the external service hangs or takes a long time to respond, the application will block indefinitely, leading to resource exhaustion and potential Denial of Service (DoS) for the application.
 **Learning:** External API and network calls in Python (such as those using `requests`, `smtplib`, or SDKs like `litellm`) often have no default timeout or rely on system-level TCP defaults which can be very long (e.g., minutes). This makes the application vulnerable to DoS if the third-party service degrades.
 **Prevention:** Always set explicit, reasonable timeouts (e.g., `timeout=15` or `timeout=60` depending on expected latency) on all network operations to fail fast and free up system resources.
+
+## 2024-07-15 - MitM vulnerability in SMTP starttls
+**Vulnerability:** The application used `smtplib.SMTP.starttls()` without providing a secure SSL context.
+**Learning:** Python's `smtplib.starttls()` does not verify certificates by default in older environments, and relying on defaults without an explicit SSL context can lead to Man-in-the-Middle (MitM) attacks where the attacker intercepts or alters the email content.
+**Prevention:** Always enforce explicit SSL certificate verification using `ssl.create_default_context()` when upgrading an SMTP connection to TLS.
